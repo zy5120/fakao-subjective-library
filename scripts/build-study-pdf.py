@@ -13,6 +13,8 @@ from reportlab.platypus import PageBreak, Paragraph, SimpleDocTemplate, Spacer, 
 
 ROOT = Path(__file__).resolve().parent.parent
 DATA = json.loads((ROOT / "data" / "library.json").read_text(encoding="utf-8"))
+RECITATIONS = json.loads((ROOT / "data" / "recitations.json").read_text(encoding="utf-8"))["records"]
+CHANNELS = json.loads((ROOT / "data" / "channels.json").read_text(encoding="utf-8"))["channels"]
 OUTPUT = ROOT / "output" / "pdf" / "法考主观题私人自学册-完整重构题面与原创答案.pdf"
 FONT_PATH = Path("/System/Library/Fonts/Supplemental/Arial Unicode.ttf")
 
@@ -225,7 +227,7 @@ def rule_text(subject, topic):
     return rules
 
 
-def build_answer(subject, topic, prompt, core_answer, source_state):
+def build_answer(subject, topic, prompt, core_answer, source_state, organized_answer=None):
     rules = rule_text(subject, topic)
     answer = [
         paragraph("一、结论先行", H3),
@@ -234,11 +236,15 @@ def build_answer(subject, topic, prompt, core_answer, source_state):
     ]
     for index, rule in enumerate(rules, 1):
         answer.append(paragraph(f"{index}. {rule}", BODY_TIGHT))
+    answer.append(paragraph("三、事实涵摄", H3))
+    if organized_answer:
+        for index, point in enumerate(organized_answer, 1):
+            answer.append(paragraph(f"{index}. {point}", BODY_TIGHT))
+    else:
+        answer.append(paragraph(f"应紧扣题面已经给出的事实：“{prompt}”进行判断。作答时把每一个事实放入相应构成要件：能够直接满足要件的，明确写明成立；事实不足的，不补造事实，而是分别写出“若……则……”的条件式结论。"))
     answer.extend([
-        paragraph("三、事实涵摄", H3),
-        paragraph(f"应紧扣题面已经给出的事实：“{prompt}”进行判断。作答时把每一个事实放入相应构成要件：能够直接满足要件的，明确写明成立；事实不足的，不补造事实，而是分别写出“若……则……”的条件式结论。"),
         paragraph("四、争议与条件分支", H3),
-        paragraph("如公开回忆或教师解析存在不同观点，应先写通说或更有评分可能的观点，再用一至两句说明另一观点的规范理由。无论采取何种观点，都要保持前提、规则、涵摄和结论一致。"),
+        paragraph("如题面事实或公开回忆存在两种可能，应先写主流结论，再分别使用“若……则……”处理条件分支。无论采取何种观点，都须保持前提、规则、涵摄和结论一致。"),
     ])
     return answer
 
@@ -279,11 +285,13 @@ for item in DATA["dailyQuestions"]:
         "subject": item["subject"],
         "topic": item["topic"],
         "title": item["title"],
-        "question": item["questionSummary"],
-        "core_answer": item["sourceAnswer"] + " " + " ".join(item["organizedAnswer"]),
+        "question": item.get("questionText", item["questionSummary"]),
+        "training_questions": item.get("trainingQuestions", question_prompts(item["subject"], item["topic"])),
+        "core_answer": item["sourceAnswer"],
+        "organized_answer": item["organizedAnswer"],
         "confidence": item["confidence"],
         "source_url": item["sourceUrl"],
-        "answer_url": item["sourceUrl"],
+        "answer_url": item.get("answerUrl", item["sourceUrl"]),
         "note": f"答案核验状态：{item['answerState']}。易错点：{item['pitfall']}",
     })
 
@@ -300,7 +308,7 @@ doc = SimpleDocTemplate(
     bottomMargin=17.5 * mm,
     title="法考主观题私人自学册-完整重构题面与原创答案",
     author="Codex 公开来源整理与原创解析",
-    subject="2026 主观题日练及 2016-2025 历年主观题私人学习资料",
+    subject="2026 主观题日练、法治思想带背及 2016-2025 历年主观题私人学习资料",
 )
 
 story = []
@@ -308,12 +316,12 @@ story += [
     Spacer(1, 28 * mm),
     paragraph("PRIVATE STUDY EDITION", COVER_KICKER),
     paragraph("法考主观题\n私人自学册", COVER_TITLE),
-    paragraph("2026 公开日练 × 2016-2025 历年真题\n完整重构题面 · 明确设问 · 完整原创答案 · 来源入口", COVER_SUB),
+    paragraph("2026 公开日练 × 法治思想带背 × 2016-2025 历年真题\n完整训练题面 · 明确设问 · 完整原创答案 · 来源入口", COVER_SUB),
 ]
 count_table = Table([
-    [paragraph(str(len(daily)), H1), paragraph(str(len(history)), H1), paragraph(str(len(all_records)), H1)],
-    [paragraph("2026 日练", SMALL), paragraph("历年分题", SMALL), paragraph("合计训练条目", SMALL)],
-], colWidths=[49 * mm] * 3)
+    [paragraph(str(len(daily)), H1), paragraph(str(len(RECITATIONS)), H1), paragraph(str(len(history)), H1), paragraph(str(len(all_records) + len(RECITATIONS)), H1)],
+    [paragraph("2026 日练", SMALL), paragraph("法治思想带背", SMALL), paragraph("历年分题", SMALL), paragraph("合计", SMALL)],
+], colWidths=[42 * mm] * 4)
 count_table.setStyle(TableStyle([
     ("BACKGROUND", (0, 0), (-1, -1), GREEN_SOFT),
     ("BOX", (0, 0), (-1, -1), 0.5, LINE),
@@ -324,8 +332,8 @@ count_table.setStyle(TableStyle([
     ("BOTTOMPADDING", (0, 0), (-1, -1), 9),
 ]))
 story += [count_table, Spacer(1, 13 * mm), box("版本说明", [
-    paragraph("本册不复制机构或老师页面的整篇原文。每道题依据公开可核验信息重构为可直接作答的完整训练题，并提供原创参考答案。"),
-    paragraph("“完整”是指学习要素完整：案情范围、明确设问、审查路径、条件分支和完整答案；不是对第三方网页逐字转载。原始页面入口保留在每题末尾。", BODY_TIGHT),
+    paragraph("每道题完整保留可核验的案情事实与设问，并提供完整原创参考答案；法治思想带背以最新权威资料校准。"),
+    paragraph("发布者公布答案的原始页面入口保留在每题前部，便于逐项核对；本册整理稿与发布者原文分层呈现。", BODY_TIGHT),
 ], fill=PAPER), Spacer(1, 6 * mm), paragraph(f"资料核验截止：{DATA['metadata']['cutoff']}｜私人学习版", SMALL), PageBreak()]
 
 story += [paragraph("使用方法", H1), paragraph("建议先只阅读“完整重构题面”和“训练设问”，用 8-15 分钟写出自己的答案，再继续阅读下方原创答案。对于回忆版真题，题面事实不足时练习条件式作答，而不是自行补造事实。", BODY)]
@@ -367,7 +375,7 @@ for index, record in enumerate(all_records):
         last_history_year = record["year"]
         story += [paragraph(f"{record['year']} 年度", COVER_KICKER), paragraph(record["institution"], H1), paragraph(record["note"], SMALL), Spacer(1, 5 * mm)]
 
-    prompts = question_prompts(record["subject"], record["topic"])
+    prompts = record.get("training_questions", question_prompts(record["subject"], record["topic"]))
     story += [
         tag(record["confidence"], status=True),
         Spacer(1, 3 * mm),
@@ -376,7 +384,7 @@ for index, record in enumerate(all_records):
         Spacer(1, 2 * mm),
         source_link_box(record),
         Spacer(1, 2 * mm),
-        box("完整重构题面", [
+        box("完整训练题面", [
             paragraph(record["question"]),
             paragraph("除题面明确给出的事实外，不自行假定其他事实。公开回忆材料存在缺口时，应在答案中分别作条件式判断。", BODY_TIGHT),
         ], fill=PAPER),
@@ -386,15 +394,46 @@ for index, record in enumerate(all_records):
     for prompt_index, prompt in enumerate(prompts, 1):
         story.append(paragraph(f"{prompt_index}. {prompt}"))
     story += [Spacer(1, 2 * mm), box("作答暂停区", "建议先独立完成答案，再继续阅读。检查是否具备：明确结论、规则依据、事实涵摄、条件分支和最终结论。", fill=GREEN_SOFT), Spacer(1, 4 * mm), paragraph("完整原创答案", H2)]
-    story.extend(build_answer(record["subject"], record["topic"], record["question"], record["core_answer"], record["confidence"]))
+    story.extend(build_answer(record["subject"], record["topic"], record["question"], record["core_answer"], record["confidence"], record.get("organized_answer")))
     story += [
         PageBreak(),
     ]
 
-story += [paragraph("附录｜机构与系列覆盖", H1), paragraph("没有公开可逐题核验的完整主观题归档时，只记录检索状态，不把课程名称或客观题系列混入正文。", BODY)]
+story += section_page("第三编", "2026 法治思想\n主观题带背", f"{len(RECITATIONS)} 个专题｜依据十二个坚持与权威资料校准")
+for item in RECITATIONS:
+    source_url = escape(item["sourceUrl"], quote=True)
+    authority_url = escape(item["authorityUrl"], quote=True)
+    story += [
+        tag(item["status"], status=True),
+        Spacer(1, 3 * mm),
+        paragraph(f"第 {item['order']:02d} 讲｜{item['topic']}", H1),
+        paragraph(f"{item['series']}　｜　{item['importance']}　｜　核验 {item['verifiedAt']}", SMALL),
+        Spacer(1, 2 * mm),
+        box("主观题设问", item["question"], fill=PAPER),
+        Spacer(1, 4 * mm),
+        paragraph("本库原创背诵稿", H2),
+        paragraph(item["memorization"]),
+        Spacer(1, 2 * mm),
+        box("关键词骨架", " → ".join(item["skeleton"]), fill=GREEN_SOFT),
+        Spacer(1, 4 * mm),
+        paragraph("闭卷自测", H2),
+    ]
+    for check_index, check in enumerate(item["selfCheck"], 1):
+        story.append(paragraph(f"{check_index}. {check}"))
+    story += [
+        Spacer(1, 2 * mm),
+        box("公开内容要旨", item["publishedGist"], fill=AMBER_SOFT, border=AMBER_SOFT, label_color=AMBER),
+        Spacer(1, 3 * mm),
+        Paragraph(f'<link href="{source_url}" color="#2D7454"><u>打开公开来源</u></link>　　<link href="{authority_url}" color="#2D7454"><u>打开权威复核页</u></link>', SMALL),
+        PageBreak(),
+    ]
+
+story += [paragraph("附录｜机构与系列覆盖", H1), paragraph("没有公开可逐题核验的完整主观题归档时，只记录检索状态，不把课程名称或客观题系列混入正文。渠道注册表用于后续持续增量核验。", BODY)]
 coverage_rows = [[paragraph("机构/系列", WHITE), paragraph("状态", WHITE), paragraph("核验说明", WHITE)]]
-for item in DATA["coverage"]:
-    coverage_rows.append([paragraph(item["institution"], BODY_TIGHT), paragraph(item["status"], SMALL), paragraph(item["detail"], SMALL)])
+for item in CHANNELS:
+    name = f"{item['institution']} · {item['teacher']}"
+    detail = f"{item['series']}。{item['notes']} 下次核验：{item['nextCheck']}。"
+    coverage_rows.append([paragraph(name, BODY_TIGHT), paragraph(item["status"], SMALL), paragraph(detail, SMALL)])
 coverage_table = Table(coverage_rows, colWidths=[37 * mm, 25 * mm, 112 * mm], repeatRows=1)
 coverage_table.setStyle(TableStyle([
     ("BACKGROUND", (0, 0), (-1, 0), GREEN),

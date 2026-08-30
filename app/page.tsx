@@ -1,8 +1,12 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import libraryJson from "@/data/library.json";
+import channelsJson from "@/data/channels.json";
+import recitationsJson from "@/data/recitations.json";
 import { buildRecords } from "@/lib/content-model.js";
+
+type View = "overview" | "daily" | "recitation" | "history" | "channels" | "standard";
 
 type RecordItem = {
   id: string;
@@ -17,7 +21,6 @@ type RecordItem = {
   title: string;
   questionSummary: string;
   sourceAnswer: string;
-  organizedAnswer: string[];
   pitfall: string;
   answerState: string;
   confidence: string;
@@ -36,184 +39,339 @@ type RecordItem = {
   };
 };
 
+type Recitation = (typeof recitationsJson.records)[number];
+type Channel = (typeof channelsJson.channels)[number];
+
 const allRecords = buildRecords(libraryJson) as RecordItem[];
 const dailyRecords = allRecords.filter((record) => record.shelf === "2026 每日一题");
+const pureDailyRecords = dailyRecords.filter((record) => record.id.startsWith("2026-lijia"));
+const convertedDailyRecords = dailyRecords.filter((record) => !record.id.startsWith("2026-lijia"));
 const historicalRecords = allRecords.filter((record) => record.shelf === "历年真题");
+const recitations = recitationsJson.records as Recitation[];
+const channels = channelsJson.channels as Channel[];
 const unique = (values: string[]) => [...new Set(values)].sort((a, b) => a.localeCompare(b, "zh-CN"));
 
-function confidenceTone(confidence: string) {
-  if (confidence === "官方公布") return "official";
-  if (confidence.includes("待")) return "pending";
-  return "verified";
+const navItems: { id: View; label: string; short: string }[] = [
+  { id: "overview", label: "备考总览", short: "总览" },
+  { id: "daily", label: "每日一题", short: "日练" },
+  { id: "recitation", label: "法治思想带背", short: "带背" },
+  { id: "history", label: "历年真题", short: "真题" },
+  { id: "channels", label: "渠道中心", short: "渠道" },
+  { id: "standard", label: "收录规范", short: "规范" },
+];
+
+function sourceKind(record: RecordItem) {
+  if (record.shelf === "历年真题") return record.year <= 2017 ? "官方公开题" : "公开回忆版";
+  if (record.id.startsWith("2026-lijia")) return "纯主观·教师每日一题";
+  if (record.id.startsWith("2026-meng")) return "主客观一体·主观化训练";
+  return "主观题训练";
+}
+
+function sourcePrecision(record: RecordItem) {
+  if (record.shelf === "历年真题") return record.year <= 2017 ? "题源明确" : "回忆资料";
+  if (record.sourceUrl.includes("/media/")) return "系列页已定位·单篇待补";
+  return "单篇原文已定位";
+}
+
+function tone(value: string) {
+  if (value.includes("官方") || value.includes("已核验") || value.includes("已接入")) return "verified";
+  if (value.includes("待") || value.includes("预留")) return "pending";
+  return "watch";
+}
+
+function formatDate(value: string) {
+  if (/^\d{4}-\d{2}-\d{2}$/.test(value)) return value.slice(5).replace("-", ".");
+  return value;
+}
+
+function StudyHeader({ view, setView, daysLeft }: { view: View; setView: (view: View) => void; daysLeft: number }) {
+  return (
+    <>
+      <div className="notice-bar">
+        <div><span className="live-dot" />资料持续更新至考试</div>
+        <strong>2026 主观题 · 10 月 18 日 09:00—13:00</strong>
+        <span>距离考试 {daysLeft} 天</span>
+      </div>
+      <header className="site-header">
+        <a className="brand" href="#top" onClick={() => setView("overview")} aria-label="返回备考总览">
+          <span className="brand-seal">法</span>
+          <span><strong>主观题资料库</strong><small>SUBJECTIVE LAW LIBRARY</small></span>
+        </a>
+        <nav className="desktop-nav" aria-label="资料库主导航">
+          {navItems.map((item) => <button key={item.id} className={view === item.id ? "active" : ""} onClick={() => setView(item.id)}>{item.label}</button>)}
+        </nav>
+        <a className="header-action" href="/downloads/法考主观题私人自学册-完整重构题面与原创答案.pdf" download>下载学习册</a>
+      </header>
+    </>
+  );
+}
+
+function Overview({ setView, daysLeft }: { setView: (view: View) => void; daysLeft: number }) {
+  const connected = channels.filter((channel) => channel.status.includes("接入") || channel.status.includes("追踪")).length;
+  return (
+    <div className="overview" id="top">
+      <section className="hero-panel">
+        <div className="hero-copy">
+          <p className="kicker">2026 法考主观题备考中枢</p>
+          <h1>收得全，<br /><em>核得准。</em></h1>
+          <p>每日一题、法治思想带背和近十年真题统一归档。每条资料都标明题型、来源、核验层级与答案性质，后续新增老师和平台无需重做网页。</p>
+          <div className="hero-actions">
+            <button className="primary-button" onClick={() => setView("daily")}>开始今日训练 <span>→</span></button>
+            <button className="secondary-button" onClick={() => setView("recitation")}>背十二个坚持</button>
+          </div>
+        </div>
+        <aside className="countdown-card">
+          <div className="countdown-label"><span>考试倒计时</span><small>司法部公告已核验</small></div>
+          <strong>{daysLeft}</strong>
+          <p>天</p>
+          <div className="exam-meta"><span>10 月 18 日</span><span>240 分钟</span><span>计算机化考试</span></div>
+          <a href="https://www.chinalaw.gov.cn/jgsz/jgszzsdw/zsdwgjsfkszx/" target="_blank" rel="noreferrer">查看司法部考试中心 ↗</a>
+        </aside>
+      </section>
+
+      <section className="metric-grid" aria-label="资料库统计">
+        <button onClick={() => setView("daily")}><span>01</span><strong>{pureDailyRecords.length}<i>+{convertedDailyRecords.length}</i></strong><p>纯主观 / 主观化训练</p><small>13 道教师主观题已逐题定位</small></button>
+        <button onClick={() => setView("recitation")}><span>02</span><strong>{recitations.length}</strong><p>法治思想带背专题</p><small>已按十二个坚持更新</small></button>
+        <button onClick={() => setView("history")}><span>03</span><strong>{historicalRecords.length}</strong><p>历年分题训练</p><small>覆盖 2016—2025</small></button>
+        <button onClick={() => setView("channels")}><span>04</span><strong>{connected}/{channels.length}</strong><p>已接入 / 全部渠道</p><small>保留后续扩展位</small></button>
+      </section>
+
+      <section className="dashboard-grid">
+        <article className="focus-card update-card">
+          <div className="section-cap"><span>2026 重要更新</span><small>必须改背</small></div>
+          <p className="update-number">12</p>
+          <h2>“十一个坚持”已更新为“十二个坚持”</h2>
+          <p>新增“坚持依法治国和依规治党有机统一”；第五项更新为“坚持在法治轨道上全面建设社会主义现代化国家”。</p>
+          <button onClick={() => setView("recitation")}>打开新增必背专题 →</button>
+        </article>
+        <article className="focus-card workflow-card">
+          <div className="section-cap"><span>资料入库流程</span><small>每条可追溯</small></div>
+          <ol>
+            <li><b>发现</b><span>机构、老师、平台与公开转载</span></li>
+            <li><b>定位</b><span>原题、公布答案与单篇链接</span></li>
+            <li><b>核验</b><span>题型、事实、结论和发布时间</span></li>
+            <li><b>整理</b><span>题面—设问—规则—涵摄—结论</span></li>
+            <li><b>发布</b><span>保留来源、版本和复核状态</span></li>
+          </ol>
+        </article>
+        <article className="focus-card channel-card">
+          <div className="section-cap"><span>本周重点追踪</span><small>{channelsJson.lastReviewed}</small></div>
+          <div className="channel-mini-list">
+            {channels.filter((channel) => channel.priority === "P0").map((channel) => (
+              <div key={channel.id}><span className={`mini-status ${tone(channel.status)}`} /> <p><strong>{channel.teacher}</strong><small>{channel.series}</small></p><em>{channel.status}</em></div>
+            ))}
+          </div>
+          <button onClick={() => setView("channels")}>查看全部渠道与下次核验 →</button>
+        </article>
+      </section>
+    </div>
+  );
+}
+
+function RecordReader({ record }: { record: RecordItem }) {
+  return (
+    <article className="reader" id="record-reader">
+      <header className="reader-header">
+        <div className="record-badges"><span>{record.subject}</span><span>{sourceKind(record)}</span><span className={tone(sourcePrecision(record))}>{sourcePrecision(record)}</span></div>
+        <p>{record.institution} · {record.teacher} · {record.shelf === "历年真题" ? record.year : "2026"}</p>
+        <h2>{record.title}</h2>
+        <div className="source-actions"><a href={record.sourceUrl} target="_blank" rel="noreferrer">题目来源 ↗</a><a href={record.answerUrl ?? record.sourceUrl} target="_blank" rel="noreferrer">公布答案 / 解析 ↗</a></div>
+      </header>
+      <section className="reader-section prompt-section">
+        <div className="reader-section-title"><span>01</span><h3>完整训练题面</h3><small>依公开资料重构</small></div>
+        <p className="long-copy">{record.completeQuestion}</p>
+      </section>
+      <section className="reader-section">
+        <div className="reader-section-title"><span>02</span><h3>作答任务</h3></div>
+        <ol className="question-list">{record.trainingQuestions.map((question) => <li key={question}>{question}</li>)}</ol>
+      </section>
+      <details className="answer-disclosure" open>
+        <summary><span><b>03</b> 完整答案</span><em>点击收起 / 展开</em></summary>
+        <div className="answer-body">
+          <aside className="published-note"><strong>发布者公布答案要旨</strong><p>{record.sourceAnswer}</p><small>非逐字稿；请通过上方原页核对发布者完整内容。</small></aside>
+          <h4>一、结论先行</h4><p>{record.completeAnswer.conclusion}</p>
+          <h4>二、适用规则</h4><ol>{record.completeAnswer.rules.map((rule) => <li key={rule}>{rule}</li>)}</ol>
+          <h4>三、事实涵摄</h4><p>{record.completeAnswer.application}</p>
+          <h4>四、争议与条件分支</h4><p>{record.completeAnswer.branches}</p>
+          <div className="answer-summary"><strong>落笔压缩版</strong><ul>{record.completeAnswer.conciseSummary.map((item) => <li key={item}>{item}</li>)}</ul></div>
+          <aside className="warning-note"><strong>易错提醒</strong><p>{record.pitfall}</p></aside>
+        </div>
+      </details>
+    </article>
+  );
+}
+
+function LibraryWorkspace({ mode }: { mode: "daily" | "history" }) {
+  const source = mode === "daily" ? dailyRecords : historicalRecords;
+  const [query, setQuery] = useState("");
+  const [subject, setSubject] = useState("全部科目");
+  const [year, setYear] = useState("全部年份");
+  const [selectedId, setSelectedId] = useState(source[0]?.id ?? "");
+  const subjects = useMemo(() => unique(source.map((record) => record.subject)), [source]);
+  const years = useMemo(() => unique(source.map((record) => String(record.year))).sort((a, b) => Number(b) - Number(a)), [source]);
+  const filtered = useMemo(() => {
+    const needle = query.trim().toLowerCase();
+    return source.filter((record) => (subject === "全部科目" || record.subject === subject) && (year === "全部年份" || String(record.year) === year) && (!needle || [record.title, record.topic, record.completeQuestion, record.completeAnswer.conclusion, record.institution, record.teacher].join(" ").toLowerCase().includes(needle)));
+  }, [query, source, subject, year]);
+  const selected = filtered.find((record) => record.id === selectedId) ?? filtered[0] ?? source[0];
+
+  return (
+    <section className="workspace-page">
+      <header className="page-title-row">
+        <div><p className="kicker">{mode === "daily" ? "2026 DAILY PRACTICE" : "2016—2025 ARCHIVE"}</p><h1>{mode === "daily" ? "每日一题工作台" : "近十年真题库"}</h1><p>{mode === "daily" ? "持续收集至 10 月 18 日。主客观一体题只有在能够独立形成法律论证时才入库。" : "2016—2017 为官方公开题；2018—2025 按公开回忆版管理，事实缺口不补造。"}</p></div>
+        <div className="title-stat"><strong>{filtered.length}</strong><span>当前结果</span></div>
+      </header>
+      {mode === "daily" && <div className="daily-audit" aria-label="2026 每日一题收录审计">
+        <div><span>纯主观已发布</span><strong>13</strong><small>李佳第 1—13 题</small></div>
+        <div><span>题目单篇页</span><strong>13/13</strong><small>全部逐题定位</small></div>
+        <div><span>答案单篇页</span><strong>12/13</strong><small>第 13 题答案索引待稳定</small></div>
+        <div><span>主观化训练</span><strong>8</strong><small>单列，不与纯主观混算</small></div>
+        <p>截至 2026-08-31，检索到明确以“主观题每日一题”连续发布且题面、答案均公开的 2026 新系列为李佳行政法；其他老师当前大量“每日一题”为客观题，已登记渠道，但不拿来冒充纯主观题。</p>
+      </div>}
+      <div className="workspace-toolbar">
+        <label className="search-box"><span>⌕</span><input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="搜索案情、争点、老师、规则……" aria-label="搜索题库" /></label>
+        <label><span>科目</span><select value={subject} onChange={(event) => setSubject(event.target.value)}><option>全部科目</option>{subjects.map((item) => <option key={item}>{item}</option>)}</select></label>
+        {mode === "history" && <label><span>年份</span><select value={year} onChange={(event) => setYear(event.target.value)}><option>全部年份</option>{years.map((item) => <option key={item}>{item}</option>)}</select></label>}
+      </div>
+      <div className="study-workspace">
+        <aside className="workspace-rail">
+          <div className="rail-block"><span>资料类型</span><strong>{mode === "daily" ? "2026 持续更新" : "近十年归档"}</strong><p>{mode === "daily" ? "纯主观题优先；主客观一体内容明确标注。" : "回忆版必须使用条件式结论处理事实缺口。"}</p></div>
+          <div className="rail-block"><span>完整性标准</span><ul><li>题面范围明确</li><li>设问可以独立作答</li><li>答案有规则与涵摄</li><li>原文与核验状态可追溯</li></ul></div>
+          <button onClick={() => { setQuery(""); setSubject("全部科目"); setYear("全部年份"); }}>清空全部筛选</button>
+        </aside>
+        <div className="record-index" aria-label="题目列表">
+          <div className="index-head"><strong>{mode === "daily" ? "训练目录" : "真题目录"}</strong><span>{filtered.length} 条</span></div>
+          {filtered.length ? filtered.map((record, index) => (
+            <button key={record.id} className={selected?.id === record.id ? "active" : ""} onClick={() => setSelectedId(record.id)}>
+              <span className="index-number">{String(index + 1).padStart(2, "0")}</span>
+              <span className="index-copy"><small>{record.subject} · {record.shelf === "历年真题" ? record.year : formatDate(record.date)}</small><strong>{record.title}</strong><em>{record.topic}</em><i>{sourceKind(record)}</i></span>
+            </button>
+          )) : <div className="empty"><strong>没有匹配条目</strong><p>请更换关键词或清空筛选。</p></div>}
+        </div>
+        {selected && <RecordReader record={selected} />}
+      </div>
+    </section>
+  );
+}
+
+function RecitationReader({ item, completed, toggle }: { item: Recitation; completed: boolean; toggle: () => void }) {
+  const [hidden, setHidden] = useState(false);
+  return (
+    <article className="reader recitation-reader" id="recitation-reader">
+      <header className="reader-header">
+        <div className="record-badges"><span>{item.series}</span><span>{item.importance}</span><span className="verified">{item.status}</span></div>
+        <p>2026 法治思想 · 第 {String(item.order).padStart(2, "0")} 讲</p>
+        <h2>{item.topic}</h2>
+        <div className="source-actions"><a href={item.sourceUrl} target="_blank" rel="noreferrer">公开来源 ↗</a><a href={item.authorityUrl} target="_blank" rel="noreferrer">权威复核 ↗</a></div>
+      </header>
+      <section className="reader-section prompt-section"><div className="reader-section-title"><span>问</span><h3>主观题设问</h3></div><p className="recitation-question">{item.question}</p></section>
+      <section className="reader-section memory-section">
+        <div className="reader-section-title"><span>背</span><h3>本库原创背诵稿</h3><button onClick={() => setHidden((value) => !value)}>{hidden ? "显示内容" : "隐藏默写"}</button></div>
+        <div className={`memory-copy ${hidden ? "concealed" : ""}`}>{hidden ? "请根据关键词骨架完整默写本段。" : item.memorization}</div>
+      </section>
+      <section className="reader-section"><div className="reader-section-title"><span>骨</span><h3>关键词骨架</h3></div><div className="keyword-grid">{item.skeleton.map((word, index) => <span key={word}><b>{index + 1}</b>{word}</span>)}</div></section>
+      <section className="reader-section"><div className="reader-section-title"><span>测</span><h3>闭卷自测</h3></div><ol className="question-list">{item.selfCheck.map((question) => <li key={question}>{question}</li>)}</ol></section>
+      <aside className="published-note"><strong>公开内容要旨</strong><p>{item.publishedGist}</p><small>教师或权威页面原文不在本站冒充原创；请从上方来源入口核对。</small></aside>
+      <button className={`completion-button ${completed ? "completed" : ""}`} onClick={toggle}>{completed ? "✓ 已完成本讲" : "标记为已完成"}</button>
+    </article>
+  );
+}
+
+function RecitationWorkspace() {
+  const [query, setQuery] = useState("");
+  const [selectedId, setSelectedId] = useState(recitations[0]?.id ?? "");
+  const [completed, setCompleted] = useState<string[]>(() => {
+    if (typeof window === "undefined") return [];
+    try { return JSON.parse(localStorage.getItem("fakao-recitation-progress") ?? "[]"); } catch { return []; }
+  });
+  const filtered = useMemo(() => {
+    const needle = query.trim().toLowerCase();
+    return recitations.filter((item) => !needle || [item.topic, item.question, item.memorization, item.skeleton.join(" ")].join(" ").toLowerCase().includes(needle));
+  }, [query]);
+  const selected = filtered.find((item) => item.id === selectedId) ?? filtered[0] ?? recitations[0];
+  function toggle(id: string) {
+    setCompleted((items) => {
+      const next = items.includes(id) ? items.filter((item) => item !== id) : [...items, id];
+      localStorage.setItem("fakao-recitation-progress", JSON.stringify(next));
+      return next;
+    });
+  }
+  return (
+    <section className="workspace-page recitation-page">
+      <header className="page-title-row"><div><p className="kicker">2026 RULE OF LAW THOUGHT</p><h1>法治思想带背</h1><p>依据 2025 年版《学习纲要》更新为十二个坚持。公开带背负责发现高频设问，权威资料负责校准表述。</p></div><div className="title-stat"><strong>{completed.length}/{recitations.length}</strong><span>本机完成进度</span></div></header>
+      <div className="change-alert"><strong>2026 必须纠正</strong><span>第五项使用“全面建设社会主义现代化国家”；新增第十二项“依法治国和依规治党有机统一”。</span></div>
+      <div className="workspace-toolbar"><label className="search-box"><span>⌕</span><input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="搜索十二个坚持、法治体系、涉外法治……" aria-label="搜索带背专题" /></label><div className="progress-pill"><span style={{ width: `${Math.round((completed.length / recitations.length) * 100)}%` }} /><b>{Math.round((completed.length / recitations.length) * 100)}%</b></div></div>
+      <div className="study-workspace recitation-workspace">
+        <aside className="workspace-rail"><div className="rail-block"><span>背诵方法</span><ol><li>先读主观题设问</li><li>只看关键词骨架复述</li><li>隐藏正文完成默写</li><li>核对表述并完成自测</li></ol></div><div className="rail-block"><span>来源层级</span><p>中央和国家机关公开资料为权威底稿；老师公开带背用于识别高频问法。</p></div></aside>
+        <div className="record-index recitation-index"><div className="index-head"><strong>专题目录</strong><span>{filtered.length} 讲</span></div>{filtered.map((item) => <button key={item.id} className={selected?.id === item.id ? "active" : ""} onClick={() => setSelectedId(item.id)}><span className="index-number">{completed.includes(item.id) ? "✓" : String(item.order).padStart(2, "0")}</span><span className="index-copy"><small>{item.series} · {item.importance}</small><strong>{item.topic}</strong><em>{item.question}</em></span></button>)}</div>
+        {selected && <RecitationReader item={selected} completed={completed.includes(selected.id)} toggle={() => toggle(selected.id)} />}
+      </div>
+    </section>
+  );
+}
+
+function ChannelsView() {
+  const [query, setQuery] = useState("");
+  const filtered = channels.filter((channel) => !query || [channel.institution, channel.teacher, channel.series, channel.subjects.join(" "), channel.status].join(" ").toLowerCase().includes(query.toLowerCase()));
+  return (
+    <section className="workspace-page channels-page">
+      <header className="page-title-row"><div><p className="kicker">SOURCE REGISTRY</p><h1>渠道中心</h1><p>新增机构、老师或平台只需登记渠道，不需要改页面结构。每个渠道都有优先级、访问限制、核验时间和下一次检查日期。</p></div><div className="title-stat"><strong>{channels.length}</strong><span>渠道登记</span></div></header>
+      <div className="channel-summary"><div><strong>{channels.filter((item) => item.priority === "P0").length}</strong><span>P0 核心渠道</span></div><div><strong>{channels.filter((item) => item.status.includes("接入")).length}</strong><span>已接入</span></div><div><strong>{channels.filter((item) => item.status.includes("追踪")).length}</strong><span>持续追踪</span></div><div><strong>{channels.filter((item) => item.status.includes("预留") || item.status.includes("待")).length}</strong><span>待接入 / 预留</span></div></div>
+      <label className="search-box channel-search"><span>⌕</span><input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="搜索机构、老师、科目或栏目……" aria-label="搜索渠道" /></label>
+      <div className="channel-table" aria-label="资料渠道登记表">
+        <div className="channel-table-head"><span>优先级 / 状态</span><span>机构与老师</span><span>栏目与内容</span><span>核验计划</span><span>入口</span></div>
+        {filtered.map((channel) => <article key={channel.id}>
+          <div><b className={`priority ${channel.priority.toLowerCase()}`}>{channel.priority}</b><span className={`channel-state ${tone(channel.status)}`}>{channel.status}</span></div>
+          <div><strong>{channel.institution}</strong><small>{channel.teacher} · {channel.platform}</small></div>
+          <div><strong>{channel.series}</strong><small>{channel.contentKinds.join(" · ")}</small><p>{channel.notes}</p></div>
+          <div><strong>{channel.cadence}</strong><small>上次 {channel.lastChecked}</small><small>下次 {channel.nextCheck}</small></div>
+          <a href={channel.primaryUrl} target="_blank" rel="noreferrer">打开 ↗</a>
+        </article>)}
+      </div>
+    </section>
+  );
+}
+
+function StandardView() {
+  const rules = [
+    ["01", "题型门槛", "纯客观选择题不入主观题库。主客观一体材料只有在能够独立形成“结论—规则—涵摄”的法律陈述时，才作为主观化训练收录并明确标记。"],
+    ["02", "来源定位", "优先保存单篇原题和单篇答案链接；只能定位到账号或系列页时，标记“单篇待补”，不得写成已经逐题核验。"],
+    ["03", "答案分层", "发布者答案要旨、本库完整原创答案、简约归纳分开呈现。发布者全文从原页核对，本站不把整理稿冒充官方答案。"],
+    ["04", "事实完整", "题面事实不完整时不得自行补造。使用“若……则……”分别处理条件分支，并在醒目位置标明回忆版或重构题面。"],
+    ["05", "理论更新", "法治思想以最新权威文件为准。2026 年按十二个坚持管理，并记录旧表述、新表述和核验依据。"],
+    ["06", "版本与复核", "每条记录保存首次发现、最后核验、核验人、来源状态和内容版本；修改结论时必须写明原因。"],
+  ];
+  return (
+    <section className="workspace-page standard-page">
+      <header className="page-title-row"><div><p className="kicker">EDITORIAL STANDARD</p><h1>收集与核验规范</h1><p>质量优先不是“收得少”，而是每条资料都能说明从哪里来、完整到什么程度、答案是什么性质、何时核验过。</p></div><div className="title-stat"><strong>5</strong><span>来源层级</span></div></header>
+      <div className="standard-hero"><div><span>来源等级</span><h2>P0 官方权威 → P1 教师原发 → P2 机构公开 → P3 可靠转载 → P4 搜索线索</h2></div><p>P4 只能用于发现，不能直接作为“完整题目/答案已核验”的依据。</p></div>
+      <div className="standard-grid">{rules.map(([number, title, copy]) => <article key={number}><span>{number}</span><h3>{title}</h3><p>{copy}</p></article>)}</div>
+      <section className="field-spec"><div><p className="kicker">REQUIRED FIELDS</p><h2>以后新增每一题，至少填写这些字段</h2></div><div className="field-list">{["唯一 ID 与内容类型", "机构、老师、平台、栏目", "发布时间与最后核验时间", "原题单篇链接与答案单篇链接", "完整题面或明确的重构边界", "发布者答案性质与核验状态", "本库完整答案：结论、规则、涵摄、分支", "题型标签：纯主观 / 主客观一体转主观", "版权与访问限制说明", "版本变更记录"].map((field, index) => <span key={field}><b>{String(index + 1).padStart(2, "0")}</b>{field}</span>)}</div></section>
+    </section>
+  );
 }
 
 export default function Home() {
-  const [section, setSection] = useState<"library" | "coverage" | "method">("library");
-  const [query, setQuery] = useState("");
-  const [shelf, setShelf] = useState("全部");
-  const [subject, setSubject] = useState("全部科目");
-  const [institution, setInstitution] = useState("全部来源");
-  const [year, setYear] = useState("全部年份");
-  const [visible, setVisible] = useState(18);
-
-  const subjects = useMemo(() => unique(allRecords.map((record) => record.subject)), []);
-  const institutions = useMemo(() => unique(allRecords.map((record) => record.institution)), []);
-  const years = useMemo(() => unique(allRecords.map((record) => String(record.year))).sort((a, b) => Number(b) - Number(a)), []);
-
-  const filtered = useMemo(() => {
-    const needle = query.trim().toLowerCase();
-    return allRecords.filter((record) => {
-      const haystack = [
-        record.title,
-        record.subject,
-        record.topic,
-        record.completeQuestion,
-        record.sourceAnswer,
-        record.completeAnswer.conclusion,
-        record.completeAnswer.rules.join(" "),
-        record.institution,
-        record.teacher,
-      ].join(" ").toLowerCase();
-      return (
-        (shelf === "全部" || record.shelf === shelf) &&
-        (subject === "全部科目" || record.subject === subject) &&
-        (institution === "全部来源" || record.institution === institution) &&
-        (year === "全部年份" || String(record.year) === year) &&
-        (!needle || haystack.includes(needle))
-      );
-    });
-  }, [institution, query, shelf, subject, year]);
-
-  function resetFilters() {
-    setQuery("");
-    setShelf("全部");
-    setSubject("全部科目");
-    setInstitution("全部来源");
-    setYear("全部年份");
-    setVisible(18);
-  }
+  const [view, setView] = useState<View>("overview");
+  const [daysLeft] = useState(() => {
+    const exam = new Date("2026-10-18T09:00:00+08:00").getTime();
+    return Math.max(0, Math.ceil((exam - Date.now()) / 86400000));
+  });
+  useEffect(() => { window.scrollTo({ top: 0, behavior: "smooth" }); }, [view]);
 
   return (
     <main>
-      <header className="hero">
-        <nav className="top-nav" aria-label="资料库导航">
-          <a className="brand" href="#top" aria-label="返回顶部"><span>法</span><strong>主观题资料库</strong></a>
-          <div>
-            <button className={section === "library" ? "active" : ""} onClick={() => setSection("library")}>题目库</button>
-            <button className={section === "coverage" ? "active" : ""} onClick={() => setSection("coverage")}>机构追踪</button>
-            <button className={section === "method" ? "active" : ""} onClick={() => setSection("method")}>收录口径</button>
-          </div>
-        </nav>
-
-        <div className="hero-grid" id="top">
-          <div className="hero-copy">
-            <p className="eyebrow">2026 主观日练 × 2016—2025 真题</p>
-            <h1>题面完整，<br />答案能直接落笔。</h1>
-            <p className="lede">逐题呈现完整训练题面、明确设问与完整原创作答。原题和公布答案均保留直达入口，回忆版事实不足处明确使用条件式结论。</p>
-          </div>
-          <aside className="edition-card" aria-label="资料库版本">
-            <div className="edition-top"><span className="status-dot" /><span>核验截止 {libraryJson.metadata.cutoff}</span></div>
-            <strong>{allRecords.length}</strong>
-            <p>道结构化主观题条目</p>
-            <small>每题均含原题入口、公布答案入口和本库完整原创答案。</small>
-            <div className="hero-downloads">
-              <a href="/downloads/法考主观题私人自学册-完整重构题面与原创答案.pdf" download>下载 83 页学习册</a>
-              <a href="/downloads/法考主观题资料库.xlsx" download>下载 Excel 题库</a>
-            </div>
-          </aside>
-        </div>
-
-        <section className="stats" aria-label="资料库统计">
-          <div><strong>{dailyRecords.length}</strong><span>2026 公开日练</span></div>
-          <div><strong>{historicalRecords.length}</strong><span>历年分题训练</span></div>
-          <div><strong>10</strong><span>覆盖年度</span></div>
-          <div><strong>156</strong><span>原题与答案入口</span></div>
-        </section>
-      </header>
-
-      {section === "library" && (
-        <section className="library-shell">
-          <div className="toolbar">
-            <label className="search-field"><span>⌕</span><input value={query} onChange={(event) => { setQuery(event.target.value); setVisible(18); }} placeholder="搜索案情、规则、争点、老师……" aria-label="搜索题库" /></label>
-            <div className="segmented" aria-label="资料分类">
-              {["全部", "2026 每日一题", "历年真题"].map((item) => <button key={item} className={shelf === item ? "active" : ""} onClick={() => { setShelf(item); setVisible(18); }}>{item}</button>)}
-            </div>
-          </div>
-
-          <div className="content-grid">
-            <aside className="filter-panel">
-              <div className="filter-heading"><p>精细筛选</p><button onClick={resetFilters}>重置</button></div>
-              <label>科目<select value={subject} onChange={(event) => { setSubject(event.target.value); setVisible(18); }}><option>全部科目</option>{subjects.map((item) => <option key={item}>{item}</option>)}</select></label>
-              <label>年份<select value={year} onChange={(event) => { setYear(event.target.value); setVisible(18); }}><option>全部年份</option>{years.map((item) => <option key={item}>{item}</option>)}</select></label>
-              <label>机构 / 卷别<select value={institution} onChange={(event) => { setInstitution(event.target.value); setVisible(18); }}><option>全部来源</option>{institutions.map((item) => <option key={item}>{item}</option>)}</select></label>
-              <div className="filter-note"><strong>答案怎么读</strong><p>“公布答案要旨”是非逐字整理；“完整原创答案”补全规则、涵摄和争议分支。原文始终通过来源按钮核对。</p></div>
-            </aside>
-
-            <section className="records" aria-live="polite">
-              <div className="section-heading"><div><p className="eyebrow">SUBJECTIVE ONLY</p><h2>完整主观题学习工作台</h2></div><span>找到 {filtered.length} 条</span></div>
-              <div className="record-list">
-                {filtered.slice(0, visible).map((record) => (
-                  <article className="question-card" key={record.id}>
-                    <div className="card-topline">
-                      <div className="card-meta"><span>{record.shelf}</span><span>{record.year}</span><span>{record.subject}</span><span className={`confidence ${confidenceTone(record.confidence)}`}>{record.confidence}</span></div>
-                      <span className={`answer-state ${record.completeness.tone}`}>{record.completeness.label}</span>
-                    </div>
-                    <p className="topic">{record.topic}</p>
-                    <h3>{record.title}</h3>
-                    <p className="byline">{record.institution} · {record.teacher} · {record.platform}</p>
-                    <div className="source-strip"><span>公开原文留存</span><a href={record.sourceUrl} target="_blank" rel="noreferrer">打开原题发布页 ↗</a><a href={record.answerUrl ?? record.sourceUrl} target="_blank" rel="noreferrer">打开公布答案／解析原页 ↗</a></div>
-                    <div className="prompt-block"><span>完整训练题面（依公开资料重构）</span><p>{record.completeQuestion}</p></div>
-                    <section className="training-block"><h4>训练设问</h4><ol>{record.trainingQuestions.map((question) => <li key={question}>{question}</li>)}</ol></section>
-                    <details>
-                      <summary><span>展开完整答案</span><span aria-hidden="true">＋</span></summary>
-                      <div className="answer-panel">
-                        <section className="published-answer"><h4>公布答案要旨（非逐字稿）</h4><p>{record.sourceAnswer}</p><a href={record.answerUrl ?? record.sourceUrl} target="_blank" rel="noreferrer">回到公布答案原页核对 ↗</a></section>
-                        <section>
-                          <h4>完整原创答案</h4>
-                          <h5>一、结论先行</h5><p>{record.completeAnswer.conclusion}</p>
-                          <h5>二、适用规则与审查标准</h5><ol>{record.completeAnswer.rules.map((rule) => <li key={rule}>{rule}</li>)}</ol>
-                          <h5>三、事实涵摄</h5><p>{record.completeAnswer.application}</p>
-                          <h5>四、争议与条件分支</h5><p>{record.completeAnswer.branches}</p>
-                        </section>
-                        <section className="concise"><h4>简约归纳</h4><ul>{record.completeAnswer.conciseSummary.map((summary) => <li key={summary}>{summary}</li>)}</ul></section>
-                        <aside className="pitfall"><strong>易错提醒</strong><p>{record.pitfall}</p></aside>
-                        {record.note && <p className="record-note">卷别说明：{record.note}</p>}
-                        <div className="source-links"><a href={record.sourceUrl} target="_blank" rel="noreferrer">查看题目原页 ↗</a><a href={record.answerUrl ?? record.sourceUrl} target="_blank" rel="noreferrer">查看公布答案原页 ↗</a></div>
-                      </div>
-                    </details>
-                  </article>
-                ))}
-              </div>
-              {filtered.length === 0 && <div className="empty-state"><strong>没有匹配条目</strong><p>试试清空筛选，或改用“被告”“担保”“证据”等争点关键词。</p><button onClick={resetFilters}>清空筛选</button></div>}
-              {visible < filtered.length && <button className="load-more" onClick={() => setVisible((count) => count + 18)}>继续显示 · 还剩 {filtered.length - visible} 条</button>}
-            </section>
-          </div>
-        </section>
-      )}
-
-      {section === "coverage" && (
-        <section className="standalone-panel">
-          <div className="panel-intro"><p className="eyebrow">COVERAGE</p><h2>机构覆盖与缺口，不拿客观题凑数。</h2><p>“持续追踪”表示截至核验日尚未找到无需登录、能够逐题确认题面和答案的公开主观题归档，并不表示机构没有相关课程。</p></div>
-          <div className="coverage-grid">
-            {libraryJson.coverage.map((item) => <article key={`${item.institution}-${item.teachers}`}><div><span className={`coverage-status ${item.status.includes("收录") ? "included" : item.status.includes("排除") ? "excluded" : "watch"}`}>{item.status}</span><h3>{item.institution}</h3></div><p className="teachers">{item.teachers}</p><p>{item.detail}</p><a href={item.sourceUrl} target="_blank" rel="noreferrer">查看公开依据 ↗</a></article>)}
-          </div>
-        </section>
-      )}
-
-      {section === "method" && (
-        <section className="standalone-panel method-panel">
-          <div className="panel-intro"><p className="eyebrow">METHOD</p><h2>完整性来自分层，不来自补造。</h2><p>{libraryJson.metadata.methodology}</p></div>
-          <div className="method-grid">
-            <article><span>01</span><h3>题型门槛</h3><p>纯客观选择题不入库。主客观一体材料必须能独立整理为有结论、有理由的主观问答。</p></article>
-            <article><span>02</span><h3>来源分层</h3><p>2016—2017 使用官方公开题面；2018—2025 明确标记为回忆版；2026 日练以教师或机构公开账号为先。</p></article>
-            <article><span>03</span><h3>答案分层</h3><p>公布答案保留原页入口；正文另写完整原创答案。事实不全时采用条件式结论，不把推演冒充原答案。</p></article>
-            <article><span>04</span><h3>受限平台</h3><p>遇登录、付费或 App 限制，只追踪公开搜索、公开转载和官网目录，不绕过访问控制。</p></article>
-          </div>
-          <aside className="legal-note"><strong>重要说明</strong><p>{libraryJson.metadata.notice}</p></aside>
-        </section>
-      )}
-
-      <footer><p>法考主观题资料库 · 版本 {libraryJson.metadata.cutoff}</p><p>公开学习整理 · 原题与原答案版权归各自来源方</p></footer>
+      <StudyHeader view={view} setView={setView} daysLeft={daysLeft} />
+      <div className="site-frame">
+        {view === "overview" && <Overview setView={setView} daysLeft={daysLeft} />}
+        {view === "daily" && <LibraryWorkspace mode="daily" />}
+        {view === "recitation" && <RecitationWorkspace />}
+        {view === "history" && <LibraryWorkspace mode="history" />}
+        {view === "channels" && <ChannelsView />}
+        {view === "standard" && <StandardView />}
+      </div>
+      <footer><div><span className="brand-seal">法</span><p><strong>法考主观题资料库</strong><small>持续更新至 2026 年 10 月 18 日</small></p></div><p>公开学习整理 · 原题与公布答案请从来源页核对 · 核验截止 2026-08-31</p></footer>
+      <nav className="mobile-nav" aria-label="移动端主导航">{navItems.map((item) => <button key={item.id} className={view === item.id ? "active" : ""} onClick={() => setView(item.id)}><span>{item.id === "overview" ? "⌂" : item.id === "daily" ? "题" : item.id === "recitation" ? "背" : item.id === "history" ? "卷" : item.id === "channels" ? "源" : "规"}</span>{item.short}</button>)}</nav>
     </main>
   );
 }

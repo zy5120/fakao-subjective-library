@@ -5,86 +5,198 @@ import { fileURLToPath } from "node:url";
 import { buildRecords } from "../lib/content-model.js";
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
-const library = JSON.parse(fs.readFileSync(path.join(root, "data/library.json"), "utf8"));
+const readJson = (relative) => JSON.parse(fs.readFileSync(path.join(root, relative), "utf8"));
+const library = readJson("data/library.json");
+const channels = readJson("data/channels.json");
+const recitations = readJson("data/recitations.json");
 const records = buildRecords(library);
-const payload = JSON.stringify({ library, records }).replaceAll("<", "\\u003c");
-const outputSite = path.join(root, "output/site");
-const docs = path.join(root, "docs");
-const pageTitle = "法考主观题资料库｜完整题面与完整作答";
-const pageDescription = "2026 法考主观题每日一题与 2016—2025 历年真题：完整训练题面、原创答案、原题及公布答案入口。";
+const payload = JSON.stringify({ library, channels, recitations, records }).replaceAll("<", "\\u003c");
+const css = fs.readFileSync(path.join(root, "app/globals.css"), "utf8").replace('@import "tailwindcss";', "");
+
+const pageTitle = "2026 法考主观题资料库｜每日一题、带背与近十年真题";
+const pageDescription = "持续收集 2026 法考老师主观题每日一题、法治思想带背与 2016—2025 主观题真题，逐条保留来源与答案入口。";
 
 const html = `<!doctype html>
 <html lang="zh-CN">
 <head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<meta name="theme-color" content="#174c38">
-<meta name="color-scheme" content="light">
-<title>${pageTitle}</title>
-<meta name="description" content="${pageDescription}">
-<meta property="og:type" content="website">
-<meta property="og:title" content="${pageTitle}">
-<meta property="og:description" content="${pageDescription}">
-<meta property="og:image" content="https://zy5120.github.io/fakao-subjective-library/og.png">
-<meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:title" content="${pageTitle}">
-<meta name="twitter:description" content="${pageDescription}">
-<meta name="twitter:image" content="https://zy5120.github.io/fakao-subjective-library/og.png">
-<style>
-:root{--ink:#17211c;--text:#3f4b45;--muted:#66716b;--paper:#f4f1e8;--surface:rgba(255,255,252,.92);--line:rgba(30,55,43,.14);--green:#174c38;--green2:#2d7454;--soft:#e5eee7;--amber:#8a5a17;--amberSoft:#f5ead7;--red:#9b4236;--redSoft:#f4e4df;--shadow:0 28px 86px rgba(43,52,46,.09)}
-*{box-sizing:border-box}html{scroll-behavior:smooth;background:var(--paper);scroll-padding-top:96px}body{margin:0;color:var(--ink);background:radial-gradient(circle at 94% 3%,rgba(180,127,49,.13),transparent 32rem),radial-gradient(circle at 0 48%,rgba(22,76,56,.06),transparent 28rem),linear-gradient(180deg,#f8f6f0 0%,var(--paper) 68%);font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text","PingFang SC","Microsoft YaHei",sans-serif;text-rendering:optimizeLegibility}
-button,input,select{min-height:44px;font:inherit}button,summary,a,select{-webkit-tap-highlight-color:transparent;touch-action:manipulation}button{color:inherit}a{color:inherit}.page{min-height:100vh;padding:0 max(clamp(16px,4vw,64px),env(safe-area-inset-left)) max(46px,env(safe-area-inset-bottom)) max(clamp(16px,4vw,64px),env(safe-area-inset-right))}.wrap{width:min(1240px,100%);margin:auto}
-.nav{min-height:78px;display:flex;align-items:center;justify-content:space-between;gap:24px;border-bottom:1px solid var(--line)}.brand{display:inline-flex;align-items:center;gap:10px;text-decoration:none;font-size:14px}.seal{display:grid;width:34px;height:34px;place-items:center;border-radius:10px;color:#fff;background:var(--green);font-family:"Songti SC",STSong,serif;font-size:19px}.tabs{display:flex;gap:4px}.tabs button{padding:0 14px;border:0;border-radius:10px;background:transparent;color:var(--muted);cursor:pointer}.tabs button.active{color:var(--green);background:var(--soft);font-weight:750}
-.hero{min-height:420px;display:grid;grid-template-columns:minmax(0,1fr) 300px;align-items:end;gap:66px;padding:64px 30px 48px}.eyebrow{margin:0 0 12px;color:var(--green2);font-size:11px;font-weight:850;letter-spacing:.14em;text-transform:uppercase}h1,h2,h3,h4,h5,p{margin-top:0}h1{margin-bottom:22px;font-family:"Songti SC",STSong,serif;font-size:clamp(48px,7vw,80px);line-height:1.08;letter-spacing:-.055em}.lede{max-width:760px;margin:0;color:#4d5953;font-size:clamp(16px,1.9vw,19px);line-height:1.82}.edition{padding:23px;border:1px solid var(--line);border-radius:22px;background:rgba(255,255,255,.62);box-shadow:0 18px 50px rgba(51,59,54,.06);backdrop-filter:blur(16px)}.edition-top{display:flex;align-items:center;gap:9px;margin-bottom:24px;color:var(--muted);font-size:12px}.dot{width:8px;height:8px;border-radius:50%;background:#36a26f;box-shadow:0 0 0 5px rgba(54,162,111,.11)}.edition>strong{display:block;font-family:"Songti SC",STSong,serif;font-size:54px;line-height:1}.edition>p{margin:7px 0 18px;color:#4b5851;font-weight:700}.edition>small{display:block;color:var(--muted);font-size:11px;line-height:1.65}.downloads{display:grid;gap:7px;margin-top:18px}.downloads a{display:grid;min-height:42px;place-items:center;border:1px solid var(--line);border-radius:10px;background:#fff;color:var(--green);font-size:11px;font-weight:800;text-decoration:none}.downloads a:first-child{border-color:var(--green);background:var(--green);color:#fff}
-.stats{display:grid;grid-template-columns:repeat(4,1fr);border:1px solid var(--line);border-bottom:0;border-radius:24px 24px 0 0;background:rgba(255,255,252,.72);overflow:hidden}.stats>div{display:flex;align-items:baseline;gap:10px;padding:22px 26px;border-left:1px solid var(--line)}.stats>div:first-child{border-left:0}.stats strong{font-family:"Songti SC",STSong,serif;font-size:30px}.stats span{color:var(--muted);font-size:12px}
-.shell,.panel{overflow:hidden;border:1px solid var(--line);border-radius:0 0 28px 28px;background:var(--surface);box-shadow:var(--shadow);backdrop-filter:blur(18px)}.toolbar{position:sticky;top:0;z-index:5;display:flex;justify-content:space-between;align-items:center;gap:20px;padding:18px 24px;border-bottom:1px solid var(--line);background:rgba(255,255,252,.95);backdrop-filter:blur(18px)}.search{flex:1;max-width:540px;display:flex;align-items:center;gap:10px;min-height:46px;padding:0 15px;border:1px solid transparent;border-radius:13px;background:#eeeee8;color:var(--muted)}.search:focus-within{border-color:rgba(22,76,56,.32);background:#fff}.search input{width:100%;min-width:0;border:0;outline:0;background:transparent;color:var(--ink)}.segmented{display:flex;gap:4px;padding:4px;border-radius:13px;background:#eeeee8}.segmented button{padding:0 14px;border:0;border-radius:9px;background:transparent;color:var(--muted);cursor:pointer;white-space:nowrap}.segmented button.active{background:#fff;color:var(--ink);box-shadow:0 1px 6px rgba(34,41,37,.12);font-weight:700}
-.content{display:grid;grid-template-columns:250px minmax(0,1fr)}.filters{padding:30px 22px;border-right:1px solid var(--line);background:rgba(248,248,243,.5)}.filter-heading{display:flex;align-items:center;justify-content:space-between;margin-bottom:22px}.filter-heading h3{margin:0;font-size:13px}.filter-heading button{border:0;background:transparent;color:var(--green2);font-size:12px;cursor:pointer}.filters label{display:block;margin-bottom:18px;color:var(--muted);font-size:11px;font-weight:750;letter-spacing:.04em}.filters select{width:100%;margin-top:8px;padding:0 34px 0 11px;border:1px solid var(--line);border-radius:11px;outline:0;background:#fff;color:var(--ink);font-size:13px}.filter-note{margin-top:30px;padding-top:18px;border-top:1px solid var(--line)}.filter-note strong{color:var(--green);font-size:12px}.filter-note p{margin:8px 0 0;color:var(--muted);font-size:12px;line-height:1.7}
-.records{padding:36px clamp(20px,4vw,52px) 54px}.heading{display:flex;justify-content:space-between;gap:20px;margin-bottom:20px}.heading h2,.panel-intro h2{margin-bottom:0;font-family:"Songti SC",STSong,serif;font-size:clamp(28px,4vw,39px);line-height:1.22;letter-spacing:-.025em}.heading>span{color:var(--muted);font-size:12px;white-space:nowrap}.list{border-top:1px solid var(--line)}.card{padding:31px 0;border-bottom:1px solid var(--line)}.card,.card *{overflow-wrap:anywhere}.card-top{display:flex;align-items:flex-start;justify-content:space-between;gap:16px}.meta{display:flex;flex-wrap:wrap;gap:7px}.tag,.completeness{padding:5px 8px;border-radius:7px;background:#efeee8;color:#58625d;font-size:10px;font-weight:750}.tag.official,.completeness.official{background:var(--soft);color:var(--green)}.tag.verified,.completeness.verified{background:var(--amberSoft);color:var(--amber)}.tag.pending,.completeness.pending{background:var(--redSoft);color:var(--red)}.topic{margin:18px 0 7px;color:var(--green2);font-size:12px;font-weight:750}.card h3{margin-bottom:8px;font-size:clamp(19px,2.4vw,23px);line-height:1.4;letter-spacing:-.02em}.byline{margin-bottom:17px;color:var(--muted);font-size:11px}
-.source-strip{display:flex;flex-wrap:wrap;align-items:center;gap:9px 16px;margin-bottom:12px;padding:12px 15px;border-radius:11px;background:var(--amberSoft)}.source-strip span{margin-right:auto;color:var(--amber);font-size:10px;font-weight:850;letter-spacing:.07em}.source-strip a,.links a,.published a,.coverage a{color:var(--green);font-size:11px;font-weight:800;text-underline-offset:3px}.prompt{padding:18px 20px;border-left:3px solid rgba(22,76,56,.24);border-radius:0 12px 12px 0;background:#f3f3ed}.prompt b{display:block;margin-bottom:7px;color:var(--muted);font-size:10px;letter-spacing:.08em}.prompt p{margin:0;color:var(--text);line-height:1.78;white-space:pre-line}.training{margin-top:16px;padding:17px 20px;border:1px solid var(--line);border-radius:12px;background:rgba(255,255,255,.52)}.training h4{margin-bottom:9px;color:var(--green);font-size:12px}.training ol{margin:0;padding-left:22px;color:#46534c;font-size:13px;line-height:1.72}.training li+li{margin-top:4px}
-details.answer-details{margin-top:16px;border:1px solid var(--line);border-radius:14px;background:rgba(255,255,255,.58);overflow:hidden}summary{display:flex;justify-content:space-between;gap:16px;min-height:48px;padding:15px 17px;color:var(--green);font-size:13px;font-weight:800;cursor:pointer;list-style:none}summary::-webkit-details-marker{display:none}details[open] summary{border-bottom:1px solid var(--line)}details[open] summary span:last-child{transform:rotate(45deg)}.answer{padding:4px 20px 22px;color:var(--text);font-size:14px;line-height:1.78}.answer section{padding-top:20px}.answer h4{margin-bottom:8px;color:var(--ink);font-size:12px;letter-spacing:.04em}.answer h5{margin:18px 0 7px;color:var(--green);font-size:13px}.answer p{margin-bottom:0}.answer ol,.answer ul{margin:10px 0 0;padding-left:22px}.answer li{margin-bottom:8px;padding-left:4px}.published{margin-top:16px;padding:17px 18px 18px!important;border-radius:11px;background:var(--amberSoft)}.published a{display:inline-block;margin-top:10px}.concise{margin-top:20px;padding:16px 18px 12px!important;border-radius:11px;background:var(--soft)}.pitfall{margin-top:18px;padding:14px 16px;border-radius:11px;background:var(--amberSoft);color:#6e4a19}.pitfall strong{font-size:11px}.pitfall p{margin-top:4px}.note{margin-top:16px!important;color:var(--muted);font-size:12px}.links{display:flex;flex-wrap:wrap;gap:16px;margin-top:18px}.load-more{width:100%;margin-top:24px;border:1px solid var(--line);border-radius:13px;background:#fff;color:var(--green);font-weight:750;cursor:pointer}.empty{padding:76px 20px;text-align:center;color:var(--muted)}.empty strong{display:block;color:var(--ink)}.empty p{margin:8px 0 20px}.empty button{padding:0 15px;border:0;border-radius:10px;background:var(--green);color:#fff;cursor:pointer}
-.panel{padding:clamp(34px,6vw,72px)}.panel-intro{max-width:800px;margin-bottom:42px}.panel-intro h2{margin-bottom:18px}.panel-intro>p:last-child{color:var(--muted);line-height:1.8}.coverage,.methods{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}.coverage article,.methods article{padding:23px;border:1px solid var(--line);border-radius:17px;background:rgba(255,255,255,.64)}.coverage h3,.methods h3{font-size:17px}.coverage p,.methods p{color:#4d5953;font-size:13px;line-height:1.72}.coverage small{display:block;margin-bottom:10px;color:var(--muted)}.status{display:inline-block;margin-bottom:11px;padding:4px 7px;border-radius:6px;background:var(--amberSoft);color:var(--amber);font-size:9px;font-weight:850}.status.included{background:var(--soft);color:var(--green)}.status.excluded{background:var(--redSoft);color:var(--red)}.legal{margin-top:22px;padding:20px 22px;border-radius:14px;background:var(--soft);color:#405148;font-size:13px;line-height:1.72}.hidden{display:none!important}footer{display:flex;justify-content:space-between;gap:20px;padding:30px 8px;color:var(--muted);font-size:11px}footer p{margin:0}
-@media(hover:hover){.tabs button:hover,.load-more:hover{background:var(--soft)}.downloads a:hover{filter:brightness(.97)}}
-@media(min-width:861px) and (max-width:1100px){.hero{grid-template-columns:minmax(0,1fr) 260px;gap:36px;padding-inline:12px}.content{grid-template-columns:220px minmax(0,1fr)}.records{padding-inline:30px}}
-@media(max-width:860px){.page{padding-inline:max(12px,env(safe-area-inset-left)) max(12px,env(safe-area-inset-right))}.hero{min-height:0;grid-template-columns:1fr;gap:30px;padding:48px 8px 36px}.edition{max-width:360px}.stats{grid-template-columns:repeat(2,1fr)}.stats>div:nth-child(3){border-left:0;border-top:1px solid var(--line)}.stats>div:nth-child(4){border-top:1px solid var(--line)}.toolbar{align-items:stretch;flex-direction:column}.search{max-width:none}.segmented{overflow-x:auto}.segmented button{flex:1 0 auto}.content{grid-template-columns:1fr}.filters{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;padding:20px;border-right:0;border-bottom:1px solid var(--line)}.filter-heading,.filter-note{grid-column:1/-1}.filters label{margin-bottom:0}.records{padding-inline:22px}}
-@media(max-width:620px){.nav{align-items:flex-start;flex-direction:column;padding:16px 0}.tabs{width:100%;overflow-x:auto}.tabs button{flex:1 0 auto}h1{font-size:45px}.hero{padding-top:42px}.stats>div{align-items:flex-start;flex-direction:column;gap:2px;padding:18px}.filters{grid-template-columns:1fr}.records{padding-inline:16px}.heading{align-items:flex-start;flex-direction:column}.card-top{flex-direction:column}.completeness{align-self:flex-start}.source-strip{align-items:stretch;flex-direction:column}.source-strip span{margin-right:0}.source-strip a{display:flex;min-height:40px;align-items:center;padding:0 11px;border-radius:8px;background:rgba(255,255,255,.58);text-decoration:none}.prompt,.training{padding:15px}.answer{padding-inline:15px;font-size:13.5px}.downloads a{min-height:44px}.coverage,.methods{grid-template-columns:1fr}.panel{padding-inline:18px}footer{flex-direction:column}}
-@media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}*{transition-duration:.01ms!important}}
-</style>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="theme-color" content="#123d2c">
+  <meta name="color-scheme" content="light">
+  <title>${pageTitle}</title>
+  <meta name="description" content="${pageDescription}">
+  <meta property="og:type" content="website">
+  <meta property="og:title" content="${pageTitle}">
+  <meta property="og:description" content="${pageDescription}">
+  <meta property="og:image" content="https://zy5120.github.io/fakao-subjective-library/og.png">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="${pageTitle}">
+  <meta name="twitter:description" content="${pageDescription}">
+  <meta name="twitter:image" content="https://zy5120.github.io/fakao-subjective-library/og.png">
+  <style>${css}</style>
 </head>
 <body>
-<script type="application/json" id="payload">${payload}</script>
-<div class="page"><div class="wrap">
-  <nav class="nav"><a class="brand" href="#top"><span class="seal">法</span><strong>主观题资料库</strong></a><div class="tabs"><button class="active" data-view="library">题目库</button><button data-view="coverage">机构追踪</button><button data-view="method">收录口径</button></div></nav>
-  <header class="hero" id="top"><div><p class="eyebrow">2026 主观日练 × 2016—2025 真题</p><h1>题面完整，<br>答案能直接落笔。</h1><p class="lede">逐题呈现完整训练题面、明确设问与完整原创作答。原题和公布答案均保留直达入口，回忆版事实不足处明确使用条件式结论。</p></div><aside class="edition"><div class="edition-top"><span class="dot"></span><span>核验截止 ${library.metadata.cutoff}</span></div><strong>${records.length}</strong><p>道结构化主观题条目</p><small>每题均含原题入口、公布答案入口和本库完整原创答案。</small><div class="downloads"><a href="downloads/法考主观题私人自学册-完整重构题面与原创答案.pdf" download>下载 83 页学习册</a><a href="downloads/法考主观题资料库.xlsx" download>下载 Excel 题库</a></div></aside></header>
-  <section class="stats"><div><strong>${library.dailyQuestions.length}</strong><span>2026 公开日练</span></div><div><strong>${records.length - library.dailyQuestions.length}</strong><span>历年分题训练</span></div><div><strong>10</strong><span>覆盖年度</span></div><div><strong>${records.length * 2}</strong><span>原题与答案入口</span></div></section>
-  <main class="shell" id="libraryView"><div class="toolbar"><label class="search">⌕<input id="query" placeholder="搜索案情、规则、争点、老师……" aria-label="搜索题库"></label><div class="segmented" id="shelfButtons"><button class="active" data-shelf="全部">全部</button><button data-shelf="2026 每日一题">2026 每日一题</button><button data-shelf="历年真题">历年真题</button></div></div><div class="content"><aside class="filters"><div class="filter-heading"><h3>精细筛选</h3><button id="reset">重置</button></div><label>科目<select id="subject"><option>全部科目</option></select></label><label>年份<select id="year"><option>全部年份</option></select></label><label>机构 / 卷别<select id="institution"><option>全部来源</option></select></label><div class="filter-note"><strong>答案怎么读</strong><p>“公布答案要旨”是非逐字整理；“完整原创答案”补全规则、涵摄和争议分支。原文始终通过来源按钮核对。</p></div></aside><section class="records"><div class="heading"><div><p class="eyebrow">SUBJECTIVE ONLY</p><h2>完整主观题学习工作台</h2></div><span id="resultCount"></span></div><div class="list" id="recordList"></div><button class="load-more hidden" id="loadMore"></button></section></div></main>
-  <section class="panel hidden" id="coverageView"><div class="panel-intro"><p class="eyebrow">COVERAGE</p><h2>机构覆盖与缺口，不拿客观题凑数。</h2><p>“持续追踪”表示截至核验日尚未找到无需登录、能够逐题确认题面和答案的公开主观题归档，并不表示机构没有相关课程。</p></div><div class="coverage" id="coverageList"></div></section>
-  <section class="panel hidden" id="methodView"><div class="panel-intro"><p class="eyebrow">METHOD</p><h2>完整性来自分层，不来自补造。</h2><p>${library.metadata.methodology}</p></div><div class="methods"><article><h3>01 · 题型门槛</h3><p>纯客观选择题不入库。主客观一体材料必须能独立整理为有结论、有理由的主观问答。</p></article><article><h3>02 · 来源分层</h3><p>2016—2017 使用官方公开题面；2018—2025 明确标记为回忆版；2026 日练以教师或机构公开账号为先。</p></article><article><h3>03 · 答案分层</h3><p>公布答案保留原页入口；正文另写完整原创答案。事实不全时采用条件式结论，不把推演冒充原答案。</p></article><article><h3>04 · 受限平台</h3><p>遇登录、付费或 App 限制，只追踪公开搜索、公开转载和官网目录，不绕过访问控制。</p></article></div><div class="legal">${library.metadata.notice}</div></section>
-  <footer><p>法考主观题资料库 · 版本 ${library.metadata.cutoff}</p><p>公开学习整理 · 原题与原答案版权归各自来源方</p></footer>
-</div></div>
-<script>
-const state=JSON.parse(document.getElementById('payload').textContent);const records=state.records;const library=state.library;const $=id=>document.getElementById(id);const esc=value=>String(value??'').replace(/[&<>"']/g,char=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[char]));const uniq=values=>[...new Set(values)].sort((a,b)=>String(a).localeCompare(String(b),'zh-CN'));let activeShelf='全部';let visible=18;
-for(const value of uniq(records.map(record=>record.subject)))$('subject').insertAdjacentHTML('beforeend','<option>'+esc(value)+'</option>');for(const value of uniq(records.map(record=>record.year)).sort((a,b)=>b-a))$('year').insertAdjacentHTML('beforeend','<option>'+esc(value)+'</option>');for(const value of uniq(records.map(record=>record.institution)))$('institution').insertAdjacentHTML('beforeend','<option>'+esc(value)+'</option>');
-function tone(confidence){return confidence==='官方公布'?'official':confidence.includes('待')?'pending':'verified'}
-function card(record){const answer=record.completeAnswer;return '<article class="card"><div class="card-top"><div class="meta"><span class="tag">'+esc(record.shelf)+'</span><span class="tag">'+esc(record.year)+'</span><span class="tag">'+esc(record.subject)+'</span><span class="tag '+tone(record.confidence)+'">'+esc(record.confidence)+'</span></div><span class="completeness '+esc(record.completeness.tone)+'">'+esc(record.completeness.label)+'</span></div><p class="topic">'+esc(record.topic)+'</p><h3>'+esc(record.title)+'</h3><p class="byline">'+esc(record.institution)+' · '+esc(record.teacher)+' · '+esc(record.platform)+'</p><div class="source-strip"><span>公开原文留存</span><a href="'+esc(record.sourceUrl)+'" target="_blank" rel="noreferrer">打开原题发布页 ↗</a><a href="'+esc(record.answerUrl||record.sourceUrl)+'" target="_blank" rel="noreferrer">打开公布答案／解析原页 ↗</a></div><div class="prompt"><b>完整训练题面（依公开资料重构）</b><p>'+esc(record.completeQuestion)+'</p></div><section class="training"><h4>训练设问</h4><ol>'+record.trainingQuestions.map(question=>'<li>'+esc(question)+'</li>').join('')+'</ol></section><details class="answer-details"><summary><span>展开完整答案</span><span>＋</span></summary><div class="answer"><section class="published"><h4>公布答案要旨（非逐字稿）</h4><p>'+esc(record.sourceAnswer)+'</p><a href="'+esc(record.answerUrl||record.sourceUrl)+'" target="_blank" rel="noreferrer">回到公布答案原页核对 ↗</a></section><section><h4>完整原创答案</h4><h5>一、结论先行</h5><p>'+esc(answer.conclusion)+'</p><h5>二、适用规则与审查标准</h5><ol>'+answer.rules.map(rule=>'<li>'+esc(rule)+'</li>').join('')+'</ol><h5>三、事实涵摄</h5><p>'+esc(answer.application)+'</p><h5>四、争议与条件分支</h5><p>'+esc(answer.branches)+'</p></section><section class="concise"><h4>简约归纳</h4><ul>'+answer.conciseSummary.map(item=>'<li>'+esc(item)+'</li>').join('')+'</ul></section><aside class="pitfall"><strong>易错提醒</strong><p>'+esc(record.pitfall)+'</p></aside>'+(record.note?'<p class="note">卷别说明：'+esc(record.note)+'</p>':'')+'<div class="links"><a href="'+esc(record.sourceUrl)+'" target="_blank" rel="noreferrer">查看题目原页 ↗</a><a href="'+esc(record.answerUrl||record.sourceUrl)+'" target="_blank" rel="noreferrer">查看公布答案原页 ↗</a></div></div></details></article>'}
-function filtered(){const needle=$('query').value.trim().toLowerCase();return records.filter(record=>(activeShelf==='全部'||record.shelf===activeShelf)&&($('subject').value==='全部科目'||record.subject===$('subject').value)&&($('year').value==='全部年份'||String(record.year)===$('year').value)&&($('institution').value==='全部来源'||record.institution===$('institution').value)&&(!needle||[record.title,record.subject,record.topic,record.completeQuestion,record.sourceAnswer,record.completeAnswer.conclusion,record.completeAnswer.rules.join(' '),record.institution,record.teacher].join(' ').toLowerCase().includes(needle)))}
-function render(){const rows=filtered();$('resultCount').textContent='找到 '+rows.length+' 条';$('recordList').innerHTML=rows.length?rows.slice(0,visible).map(card).join(''):'<div class="empty"><strong>没有匹配条目</strong><p>试试清空筛选，或改用“被告”“担保”“证据”等争点关键词。</p><button id="emptyReset">清空筛选</button></div>';$('loadMore').classList.toggle('hidden',visible>=rows.length);$('loadMore').textContent='继续显示 · 还剩 '+Math.max(0,rows.length-visible)+' 条';if($('emptyReset'))$('emptyReset').addEventListener('click',reset)}
-function reset(){activeShelf='全部';visible=18;$('query').value='';$('subject').value='全部科目';$('year').value='全部年份';$('institution').value='全部来源';document.querySelectorAll('#shelfButtons button').forEach(button=>button.classList.toggle('active',button.dataset.shelf==='全部'));render()}
-for(const el of [$('query'),$('subject'),$('year'),$('institution')])el.addEventListener(el.tagName==='INPUT'?'input':'change',()=>{visible=18;render()});$('reset').addEventListener('click',reset);$('loadMore').addEventListener('click',()=>{visible+=18;render()});$('shelfButtons').addEventListener('click',event=>{const button=event.target.closest('button');if(!button)return;activeShelf=button.dataset.shelf;visible=18;document.querySelectorAll('#shelfButtons button').forEach(item=>item.classList.toggle('active',item===button));render()});
-$('coverageList').innerHTML=library.coverage.map(item=>'<article><span class="status '+(item.status.includes('收录')?'included':item.status.includes('排除')?'excluded':'')+'">'+esc(item.status)+'</span><h3>'+esc(item.institution)+'</h3><small>'+esc(item.teachers)+'</small><p>'+esc(item.detail)+'</p><a href="'+esc(item.sourceUrl)+'" target="_blank" rel="noreferrer">查看公开依据 ↗</a></article>').join('');document.querySelector('.tabs').addEventListener('click',event=>{const button=event.target.closest('button');if(!button)return;document.querySelectorAll('.tabs button').forEach(item=>item.classList.toggle('active',item===button));for(const view of ['library','coverage','method'])$(view+'View').classList.toggle('hidden',view!==button.dataset.view)});render();
-</script>
-</body></html>`;
+  <script type="application/json" id="payload">${payload}</script>
+  <main id="app"></main>
+  <script>
+    const data = JSON.parse(document.getElementById("payload").textContent);
+    const records = data.records;
+    const channels = data.channels.channels;
+    const recitations = data.recitations.records;
+    const daily = records.filter((item) => item.shelf === "2026 每日一题");
+    const pureDaily = daily.filter((item) => item.id.startsWith("2026-lijia"));
+    const convertedDaily = daily.filter((item) => !item.id.startsWith("2026-lijia"));
+    const history = records.filter((item) => item.shelf === "历年真题");
+    const navItems = [
+      ["overview", "备考总览", "总览", "⌂"], ["daily", "每日一题", "日练", "题"],
+      ["recitation", "法治思想带背", "带背", "背"], ["history", "历年真题", "真题", "卷"],
+      ["channels", "渠道中心", "渠道", "源"], ["standard", "收录规范", "规范", "规"]
+    ];
+    const state = {
+      view: "overview", query: "", subject: "全部科目", year: "全部年份",
+      selectedDaily: pureDaily[0]?.id || daily[0]?.id || "", selectedHistory: history[0]?.id || "",
+      selectedRecitation: recitations[0]?.id || "", recitationQuery: "", channelQuery: "", concealed: false,
+      completed: (() => { try { return JSON.parse(localStorage.getItem("fakao-recitation-progress") || "[]"); } catch { return []; } })()
+    };
+    const esc = (value) => String(value ?? "").replace(/[&<>"']/g, (character) => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"})[character]);
+    const uniq = (values) => [...new Set(values)].sort((a, b) => String(a).localeCompare(String(b), "zh-CN"));
+    const examDays = Math.max(0, Math.ceil((new Date("2026-10-18T09:00:00+08:00").getTime() - Date.now()) / 86400000));
+    const dateLabel = (value) => /^\\d{4}-\\d{2}-\\d{2}$/.test(value) ? value.slice(5).replace("-", ".") : value;
+    const tone = (value) => value.includes("官方") || value.includes("核验") || value.includes("接入") ? "verified" : value.includes("待") || value.includes("预留") ? "pending" : "watch";
+    const sourceKind = (record) => record.shelf === "历年真题" ? (record.year <= 2017 ? "官方公开题" : "公开回忆版") : record.id.startsWith("2026-lijia") ? "纯主观·教师每日一题" : record.id.startsWith("2026-meng") ? "主客观一体·主观化训练" : "主观题训练";
+    const sourcePrecision = (record) => record.shelf === "历年真题" ? (record.year <= 2017 ? "题源明确" : "回忆资料") : record.sourceUrl.includes("/media/") ? "系列页已定位·单篇待补" : "单篇原文已定位";
 
+    function header() {
+      return '<div class="notice-bar"><div><span class="live-dot"></span>资料持续更新至考试</div><strong>2026 主观题 · 10 月 18 日 09:00—13:00</strong><span>距离考试 '+examDays+' 天</span></div>'+
+        '<header class="site-header"><a class="brand" href="#" data-view="overview" aria-label="返回备考总览"><span class="brand-seal">法</span><span><strong>主观题资料库</strong><small>SUBJECTIVE LAW LIBRARY</small></span></a>'+
+        '<nav class="desktop-nav" aria-label="资料库主导航">'+navItems.map((item) => '<button data-view="'+item[0]+'" class="'+(state.view === item[0] ? "active" : "")+'">'+item[1]+'</button>').join("")+'</nav>'+
+        '<a class="header-action" href="downloads/法考主观题私人自学册-完整重构题面与原创答案.pdf" download>下载学习册</a></header>';
+    }
+
+    function overview() {
+      const connected = channels.filter((item) => item.status.includes("接入") || item.status.includes("追踪")).length;
+      const p0 = channels.filter((item) => item.priority === "P0");
+      return '<div class="overview" id="top"><section class="hero-panel"><div class="hero-copy"><p class="kicker">2026 法考主观题备考中枢</p><h1>收得全，<br><em>核得准。</em></h1><p>每日一题、法治思想带背和近十年真题统一归档。每条资料都标明题型、来源、核验层级与答案性质，后续新增老师和平台无需重做网页。</p><div class="hero-actions"><button class="primary-button" data-view="daily">开始今日训练 <span>→</span></button><button class="secondary-button" data-view="recitation">背十二个坚持</button></div></div><aside class="countdown-card"><div class="countdown-label"><span>考试倒计时</span><small>司法部公告已核验</small></div><strong>'+examDays+'</strong><p>天</p><div class="exam-meta"><span>10 月 18 日</span><span>240 分钟</span><span>计算机化考试</span></div><a href="https://www.chinalaw.gov.cn/jgsz/jgszzsdw/zsdwgjsfkszx/" target="_blank" rel="noreferrer">查看司法部考试中心 ↗</a></aside></section>'+
+        '<section class="metric-grid" aria-label="资料库统计"><button data-view="daily"><span>01</span><strong>'+pureDaily.length+'<i>+'+convertedDaily.length+'</i></strong><p>纯主观 / 主观化训练</p><small>李佳第 1—13 题已逐题定位</small></button><button data-view="recitation"><span>02</span><strong>'+recitations.length+'</strong><p>法治思想带背专题</p><small>已按十二个坚持更新</small></button><button data-view="history"><span>03</span><strong>'+history.length+'</strong><p>历年分题训练</p><small>覆盖 2016—2025</small></button><button data-view="channels"><span>04</span><strong>'+connected+'/'+channels.length+'</strong><p>已接入 / 全部渠道</p><small>保留后续扩展位</small></button></section>'+
+        '<section class="dashboard-grid"><article class="focus-card update-card"><div class="section-cap"><span>2026 重要更新</span><small>必须改背</small></div><p class="update-number">12</p><h2>“十一个坚持”已更新为“十二个坚持”</h2><p>新增“坚持依法治国和依规治党有机统一”；第五项更新为“坚持在法治轨道上全面建设社会主义现代化国家”。</p><button data-view="recitation">打开新增必背专题 →</button></article><article class="focus-card workflow-card"><div class="section-cap"><span>资料入库流程</span><small>每条可追溯</small></div><ol><li><b>发现</b><span>机构、老师、平台与公开转载</span></li><li><b>定位</b><span>原题、公布答案与单篇链接</span></li><li><b>核验</b><span>题型、事实、结论和发布时间</span></li><li><b>整理</b><span>题面—设问—规则—涵摄—结论</span></li><li><b>发布</b><span>保留来源、版本和复核状态</span></li></ol></article><article class="focus-card channel-card"><div class="section-cap"><span>本周重点追踪</span><small>'+esc(data.channels.lastReviewed)+'</small></div><div class="channel-mini-list">'+p0.map((item) => '<div><span class="mini-status '+tone(item.status)+'"></span><p><strong>'+esc(item.teacher)+'</strong><small>'+esc(item.series)+'</small></p><em>'+esc(item.status)+'</em></div>').join("")+'</div><button data-view="channels">查看全部渠道与下次核验 →</button></article></section></div>';
+    }
+
+    function recordReader(record) {
+      const answer = record.completeAnswer;
+      return '<article class="reader" id="record-reader"><header class="reader-header"><div class="record-badges"><span>'+esc(record.subject)+'</span><span>'+esc(sourceKind(record))+'</span><span class="'+tone(sourcePrecision(record))+'">'+esc(sourcePrecision(record))+'</span></div><p>'+esc(record.institution)+' · '+esc(record.teacher)+' · '+(record.shelf === "历年真题" ? record.year : "2026")+'</p><h2>'+esc(record.title)+'</h2><div class="source-actions"><a href="'+esc(record.sourceUrl)+'" target="_blank" rel="noreferrer">题目原页 ↗</a><a href="'+esc(record.answerUrl || record.sourceUrl)+'" target="_blank" rel="noreferrer">公布答案原页 ↗</a></div></header>'+
+        '<section class="reader-section prompt-section"><div class="reader-section-title"><span>01</span><h3>完整训练题面</h3><small>事实与设问完整保留，措辞经整理</small></div><p class="long-copy">'+esc(record.completeQuestion)+'</p></section>'+
+        '<section class="reader-section"><div class="reader-section-title"><span>02</span><h3>作答任务</h3></div><ol class="question-list">'+record.trainingQuestions.map((item) => '<li>'+esc(item)+'</li>').join("")+'</ol></section>'+
+        '<details class="answer-disclosure" open><summary><span><b>03</b> 完整答案</span><em>点击收起 / 展开</em></summary><div class="answer-body"><aside class="published-note"><strong>发布者公布答案要旨</strong><p>'+esc(record.sourceAnswer)+'</p><small>答案原页已保留；请通过上方“公布答案原页”核对发布者完整表述。</small></aside><h4>一、结论先行</h4><p>'+esc(answer.conclusion)+'</p><h4>二、适用规则</h4><ol>'+answer.rules.map((item) => '<li>'+esc(item)+'</li>').join("")+'</ol><h4>三、事实涵摄</h4><p>'+esc(answer.application)+'</p><h4>四、争议与条件分支</h4><p>'+esc(answer.branches)+'</p><div class="answer-summary"><strong>落笔压缩版</strong><ul>'+answer.conciseSummary.map((item) => '<li>'+esc(item)+'</li>').join("")+'</ul></div><aside class="warning-note"><strong>易错提醒</strong><p>'+esc(record.pitfall)+'</p></aside></div></details></article>';
+    }
+
+    function libraryWorkspace(mode) {
+      const source = mode === "daily" ? daily : history;
+      const selectedKey = mode === "daily" ? "selectedDaily" : "selectedHistory";
+      const query = state.query.trim().toLowerCase();
+      const filtered = source.filter((item) => (state.subject === "全部科目" || item.subject === state.subject) && (mode === "daily" || state.year === "全部年份" || String(item.year) === state.year) && (!query || [item.title,item.topic,item.completeQuestion,item.completeAnswer.conclusion,item.institution,item.teacher].join(" ").toLowerCase().includes(query)));
+      const selected = filtered.find((item) => item.id === state[selectedKey]) || filtered[0] || source[0];
+      if (selected && !filtered.find((item) => item.id === state[selectedKey])) state[selectedKey] = selected.id;
+      const subjects = uniq(source.map((item) => item.subject));
+      const years = uniq(source.map((item) => String(item.year))).sort((a,b) => Number(b)-Number(a));
+      const audit = mode === "daily" ? '<div class="daily-audit" aria-label="2026 每日一题收录审计"><div><span>纯主观已发布</span><strong>13</strong><small>李佳第 1—13 题</small></div><div><span>题目单篇页</span><strong>13/13</strong><small>全部逐题定位</small></div><div><span>答案单篇页</span><strong>12/13</strong><small>第 13 题答案索引待稳定</small></div><div><span>主观化训练</span><strong>'+convertedDaily.length+'</strong><small>单列，不与纯主观混算</small></div><p>截至 2026-08-31，明确以“主观题每日一题”连续发布且题面、答案均公开的新系列为李佳行政法；其他老师大量同名栏目实际为客观题，已登记渠道，不拿来冒充纯主观题。</p></div>' : '';
+      return '<section class="workspace-page"><header class="page-title-row"><div><p class="kicker">'+(mode === "daily" ? "2026 DAILY PRACTICE" : "2016—2025 ARCHIVE")+'</p><h1>'+(mode === "daily" ? "每日一题工作台" : "近十年真题库")+'</h1><p>'+(mode === "daily" ? "持续收集至 10 月 18 日。主客观一体题只有在能够独立形成法律论证时才入库。" : "2016—2017 为官方公开题；2018—2025 按公开回忆版管理，事实缺口不补造。")+'</p></div><div class="title-stat"><strong>'+filtered.length+'</strong><span>当前结果</span></div></header>'+audit+
+        '<div class="workspace-toolbar"><label class="search-box"><span>⌕</span><input id="library-query" value="'+esc(state.query)+'" placeholder="搜索案情、争点、老师、规则……" aria-label="搜索题库"></label><label><span>科目</span><select id="subject-filter"><option>全部科目</option>'+subjects.map((item) => '<option '+(item === state.subject ? "selected" : "")+'>'+esc(item)+'</option>').join("")+'</select></label>'+(mode === "history" ? '<label><span>年份</span><select id="year-filter"><option>全部年份</option>'+years.map((item) => '<option '+(item === state.year ? "selected" : "")+'>'+esc(item)+'</option>').join("")+'</select></label>' : '')+'</div>'+
+        '<div class="study-workspace"><aside class="workspace-rail"><div class="rail-block"><span>资料类型</span><strong>'+(mode === "daily" ? "2026 持续更新" : "近十年归档")+'</strong><p>'+(mode === "daily" ? "纯主观题优先；主客观一体内容明确标注。" : "回忆版使用条件式结论处理事实缺口。")+'</p></div><div class="rail-block"><span>完整性标准</span><ul><li>题面范围明确</li><li>设问可以独立作答</li><li>答案有规则与涵摄</li><li>原文与核验状态可追溯</li></ul></div><button id="reset-library">清空全部筛选</button></aside><div class="record-index" aria-label="题目列表"><div class="index-head"><strong>'+(mode === "daily" ? "训练目录" : "真题目录")+'</strong><span>'+filtered.length+' 条</span></div>'+(filtered.length ? filtered.map((item,index) => '<button data-record="'+esc(item.id)+'" class="'+(selected?.id === item.id ? "active" : "")+'"><span class="index-number">'+String(index+1).padStart(2,"0")+'</span><span class="index-copy"><small>'+esc(item.subject)+' · '+(mode === "history" ? item.year : dateLabel(item.date))+'</small><strong>'+esc(item.title)+'</strong><em>'+esc(item.topic)+'</em><i>'+esc(sourceKind(item))+'</i></span></button>').join("") : '<div class="empty"><strong>没有匹配条目</strong><p>请更换关键词或清空筛选。</p></div>')+'</div>'+(selected ? recordReader(selected) : '')+'</div></section>';
+    }
+
+    function recitationReader(item) {
+      const completed = state.completed.includes(item.id);
+      const memory = state.concealed ? "请根据关键词骨架完整默写本段。" : item.memorization;
+      return '<article class="reader recitation-reader" id="recitation-reader"><header class="reader-header"><div class="record-badges"><span>'+esc(item.series)+'</span><span>'+esc(item.importance)+'</span><span class="verified">'+esc(item.status)+'</span></div><p>2026 法治思想 · 第 '+String(item.order).padStart(2,"0")+' 讲</p><h2>'+esc(item.topic)+'</h2><div class="source-actions"><a href="'+esc(item.sourceUrl)+'" target="_blank" rel="noreferrer">公开来源 ↗</a><a href="'+esc(item.authorityUrl)+'" target="_blank" rel="noreferrer">权威复核 ↗</a></div></header><section class="reader-section prompt-section"><div class="reader-section-title"><span>问</span><h3>主观题设问</h3></div><p class="recitation-question">'+esc(item.question)+'</p></section><section class="reader-section memory-section"><div class="reader-section-title"><span>背</span><h3>本库原创背诵稿</h3><button id="toggle-memory">'+(state.concealed ? "显示内容" : "隐藏默写")+'</button></div><div class="memory-copy '+(state.concealed ? "concealed" : "")+'">'+esc(memory)+'</div></section><section class="reader-section"><div class="reader-section-title"><span>骨</span><h3>关键词骨架</h3></div><div class="keyword-grid">'+item.skeleton.map((word,index) => '<span><b>'+(index+1)+'</b>'+esc(word)+'</span>').join("")+'</div></section><section class="reader-section"><div class="reader-section-title"><span>测</span><h3>闭卷自测</h3></div><ol class="question-list">'+item.selfCheck.map((question) => '<li>'+esc(question)+'</li>').join("")+'</ol></section><aside class="published-note"><strong>公开内容要旨</strong><p>'+esc(item.publishedGist)+'</p><small>公开来源与权威复核链接均已保留。</small></aside><button class="completion-button '+(completed ? "completed" : "")+'" id="toggle-completion">'+(completed ? "✓ 已完成本讲" : "标记为已完成")+'</button></article>';
+    }
+
+    function recitationWorkspace() {
+      const needle = state.recitationQuery.trim().toLowerCase();
+      const filtered = recitations.filter((item) => !needle || [item.topic,item.question,item.memorization,item.skeleton.join(" ")].join(" ").toLowerCase().includes(needle));
+      const selected = filtered.find((item) => item.id === state.selectedRecitation) || filtered[0] || recitations[0];
+      if (selected) state.selectedRecitation = selected.id;
+      const progress = Math.round((state.completed.length / recitations.length) * 100);
+      return '<section class="workspace-page recitation-page"><header class="page-title-row"><div><p class="kicker">2026 RULE OF LAW THOUGHT</p><h1>法治思想带背</h1><p>依据 2025 年版《学习纲要》更新为十二个坚持。公开带背负责发现高频设问，权威资料负责校准表述。</p></div><div class="title-stat"><strong>'+state.completed.length+'/'+recitations.length+'</strong><span>本机完成进度</span></div></header><div class="change-alert"><strong>2026 必须纠正</strong><span>第五项使用“全面建设社会主义现代化国家”；新增第十二项“依法治国和依规治党有机统一”。</span></div><div class="workspace-toolbar"><label class="search-box"><span>⌕</span><input id="recitation-query" value="'+esc(state.recitationQuery)+'" placeholder="搜索十二个坚持、法治体系、涉外法治……" aria-label="搜索带背专题"></label><div class="progress-pill"><span style="width:'+progress+'%"></span><b>'+progress+'%</b></div></div><div class="study-workspace recitation-workspace"><aside class="workspace-rail"><div class="rail-block"><span>背诵方法</span><ol><li>先读主观题设问</li><li>只看关键词骨架复述</li><li>隐藏正文完成默写</li><li>核对表述并完成自测</li></ol></div><div class="rail-block"><span>来源层级</span><p>中央和国家机关资料为权威底稿；老师公开带背用于识别高频问法。</p></div></aside><div class="record-index recitation-index"><div class="index-head"><strong>专题目录</strong><span>'+filtered.length+' 讲</span></div>'+filtered.map((item) => '<button data-recitation="'+esc(item.id)+'" class="'+(selected?.id === item.id ? "active" : "")+'"><span class="index-number">'+(state.completed.includes(item.id) ? "✓" : String(item.order).padStart(2,"0"))+'</span><span class="index-copy"><small>'+esc(item.series)+' · '+esc(item.importance)+'</small><strong>'+esc(item.topic)+'</strong><em>'+esc(item.question)+'</em></span></button>').join("")+'</div>'+(selected ? recitationReader(selected) : '')+'</div></section>';
+    }
+
+    function channelsView() {
+      const needle = state.channelQuery.toLowerCase();
+      const filtered = channels.filter((item) => !needle || [item.institution,item.teacher,item.series,item.subjects.join(" "),item.status].join(" ").toLowerCase().includes(needle));
+      const summary = [
+        [channels.filter((item) => item.priority === "P0").length,"P0 核心渠道"],
+        [channels.filter((item) => item.status.includes("接入")).length,"已接入"],
+        [channels.filter((item) => item.status.includes("追踪")).length,"持续追踪"],
+        [channels.filter((item) => item.status.includes("预留") || item.status.includes("待")).length,"待接入 / 预留"]
+      ];
+      return '<section class="workspace-page channels-page"><header class="page-title-row"><div><p class="kicker">SOURCE REGISTRY</p><h1>渠道中心</h1><p>新增机构、老师或平台只需登记渠道。每个渠道都有优先级、访问限制、核验时间和下一次检查日期。</p></div><div class="title-stat"><strong>'+channels.length+'</strong><span>渠道登记</span></div></header><div class="channel-summary">'+summary.map((item) => '<div><strong>'+item[0]+'</strong><span>'+item[1]+'</span></div>').join("")+'</div><label class="search-box channel-search"><span>⌕</span><input id="channel-query" value="'+esc(state.channelQuery)+'" placeholder="搜索机构、老师、科目或栏目……" aria-label="搜索渠道"></label><div class="channel-table"><div class="channel-table-head"><span>优先级 / 状态</span><span>机构与老师</span><span>栏目与内容</span><span>核验计划</span><span>入口</span></div>'+filtered.map((item) => '<article><div><b class="priority '+item.priority.toLowerCase()+'">'+esc(item.priority)+'</b><span class="channel-state '+tone(item.status)+'">'+esc(item.status)+'</span></div><div><strong>'+esc(item.institution)+'</strong><small>'+esc(item.teacher)+' · '+esc(item.platform)+'</small></div><div><strong>'+esc(item.series)+'</strong><small>'+esc(item.contentKinds.join(" · "))+'</small><p>'+esc(item.notes)+'</p></div><div><strong>'+esc(item.cadence)+'</strong><small>上次 '+esc(item.lastChecked)+'</small><small>下次 '+esc(item.nextCheck)+'</small></div><a href="'+esc(item.primaryUrl)+'" target="_blank" rel="noreferrer">打开 ↗</a></article>').join("")+'</div></section>';
+    }
+
+    function standardView() {
+      const rules = [
+        ["01","题型门槛","纯客观选择题不入主观题库。主客观一体材料只有在能够独立形成“结论—规则—涵摄”的法律陈述时，才作为主观化训练收录并明确标记。"],
+        ["02","来源定位","优先保存单篇原题和单篇答案链接；只能定位到账号或系列页时，标记“单篇待补”，不得写成已经逐题核验。"],
+        ["03","答案分层","发布者答案要旨、本库完整原创答案、简约归纳分开呈现。公布答案原页永久保留，整理稿不冒充原文。"],
+        ["04","事实完整","题面事实不完整时不得自行补造。使用“若……则……”分别处理条件分支，并标明回忆版或重构边界。"],
+        ["05","理论更新","法治思想以最新权威文件为准。2026 年按十二个坚持管理，并记录旧表述、新表述和核验依据。"],
+        ["06","版本与复核","每条记录保存首次发现、最后核验、来源状态和内容版本；修改结论时必须写明原因。"]
+      ];
+      const fields = ["唯一 ID 与内容类型","机构、老师、平台、栏目","发布时间与最后核验时间","原题单篇链接与答案单篇链接","完整题面或明确的重构边界","发布者答案性质与核验状态","本库完整答案：结论、规则、涵摄、分支","纯主观 / 主客观一体转主观标签","版权与访问限制说明","版本变更记录"];
+      return '<section class="workspace-page standard-page"><header class="page-title-row"><div><p class="kicker">EDITORIAL STANDARD</p><h1>收集与核验规范</h1><p>质量优先不是“收得少”，而是每条资料都能说明从哪里来、完整到什么程度、答案是什么性质、何时核验过。</p></div><div class="title-stat"><strong>5</strong><span>来源层级</span></div></header><div class="standard-hero"><div><span>来源等级</span><h2>P0 官方权威 → P1 教师原发 → P2 机构公开 → P3 可靠转载 → P4 搜索线索</h2></div><p>P4 只能用于发现，不能直接作为“完整题目/答案已核验”的依据。</p></div><div class="standard-grid">'+rules.map((item) => '<article><span>'+item[0]+'</span><h3>'+item[1]+'</h3><p>'+item[2]+'</p></article>').join("")+'</div><section class="field-spec"><div><p class="kicker">REQUIRED FIELDS</p><h2>以后新增每一题，至少填写这些字段</h2></div><div class="field-list">'+fields.map((item,index) => '<span><b>'+String(index+1).padStart(2,"0")+'</b>'+item+'</span>').join("")+'</div></section></section>';
+    }
+
+    function body() {
+      if (state.view === "overview") return overview();
+      if (state.view === "daily") return libraryWorkspace("daily");
+      if (state.view === "history") return libraryWorkspace("history");
+      if (state.view === "recitation") return recitationWorkspace();
+      if (state.view === "channels") return channelsView();
+      return standardView();
+    }
+
+    function render(focusId) {
+      document.getElementById("app").innerHTML = header()+'<div class="site-frame">'+body()+'</div><footer><div><span class="brand-seal">法</span><p><strong>法考主观题资料库</strong><small>持续更新至 2026 年 10 月 18 日</small></p></div><p>公开学习整理 · 原题与公布答案请从来源页核对 · 核验截止 2026-08-31</p></footer><nav class="mobile-nav" aria-label="移动端主导航">'+navItems.map((item) => '<button data-view="'+item[0]+'" class="'+(state.view === item[0] ? "active" : "")+'"><span>'+item[3]+'</span>'+item[2]+'</button>').join("")+'</nav>';
+      if (focusId) { const input = document.getElementById(focusId); if (input) { input.focus(); input.setSelectionRange(input.value.length,input.value.length); } }
+    }
+
+    document.addEventListener("click", (event) => {
+      const view = event.target.closest("[data-view]");
+      if (view) { event.preventDefault(); state.view = view.dataset.view; state.query = ""; state.subject = "全部科目"; state.year = "全部年份"; render(); window.scrollTo({top:0,behavior:"smooth"}); return; }
+      const record = event.target.closest("[data-record]");
+      if (record) { state[state.view === "daily" ? "selectedDaily" : "selectedHistory"] = record.dataset.record; render(); document.getElementById("record-reader")?.scrollIntoView({behavior:"smooth",block:"start"}); return; }
+      const recitation = event.target.closest("[data-recitation]");
+      if (recitation) { state.selectedRecitation = recitation.dataset.recitation; state.concealed = false; render(); document.getElementById("recitation-reader")?.scrollIntoView({behavior:"smooth",block:"start"}); return; }
+      if (event.target.closest("#reset-library")) { state.query = ""; state.subject = "全部科目"; state.year = "全部年份"; render(); return; }
+      if (event.target.closest("#toggle-memory")) { state.concealed = !state.concealed; render(); return; }
+      if (event.target.closest("#toggle-completion")) { const id = state.selectedRecitation; state.completed = state.completed.includes(id) ? state.completed.filter((item) => item !== id) : [...state.completed,id]; localStorage.setItem("fakao-recitation-progress", JSON.stringify(state.completed)); render(); }
+    });
+    document.addEventListener("input", (event) => {
+      if (event.target.id === "library-query") { state.query = event.target.value; render("library-query"); }
+      if (event.target.id === "recitation-query") { state.recitationQuery = event.target.value; render("recitation-query"); }
+      if (event.target.id === "channel-query") { state.channelQuery = event.target.value; render("channel-query"); }
+    });
+    document.addEventListener("change", (event) => {
+      if (event.target.id === "subject-filter") { state.subject = event.target.value; render(); }
+      if (event.target.id === "year-filter") { state.year = event.target.value; render(); }
+    });
+    render();
+  </script>
+</body>
+</html>`;
+
+const outputSite = path.join(root, "output/site");
+const docs = path.join(root, "docs");
 for (const directory of [outputSite, docs, path.join(outputSite, "downloads"), path.join(docs, "downloads")]) {
   fs.mkdirSync(directory, { recursive: true });
 }
 
 const targets = [path.join(outputSite, "法考主观题资料库.html"), path.join(docs, "index.html")];
 for (const target of targets) fs.writeFileSync(target, html, "utf8");
+for (const target of [path.join(outputSite, ".nojekyll"), path.join(docs, ".nojekyll")]) fs.writeFileSync(target, "", "utf8");
 
 const assets = [
   [path.join(root, "output/pdf/法考主观题私人自学册-完整重构题面与原创答案.pdf"), "downloads/法考主观题私人自学册-完整重构题面与原创答案.pdf"],
   [path.join(root, "outputs/01a053f4-c3bb-7790-a432-e754bb16040b/法考主观题资料库.xlsx"), "downloads/法考主观题资料库.xlsx"],
-  [path.join(root, "public/og.png"), "og.png"],
+  [path.join(root, "public/og.png"), "og.png"]
 ];
 for (const [source, relative] of assets) {
   if (!fs.existsSync(source)) throw new Error(`Missing static asset: ${source}`);
@@ -92,4 +204,5 @@ for (const [source, relative] of assets) {
   fs.copyFileSync(source, path.join(docs, relative));
 }
 
+console.log(`Generated ${records.length} questions, ${recitations.records.length} recitations, ${channels.channels.length} channels.`);
 console.log(targets.join("\n"));

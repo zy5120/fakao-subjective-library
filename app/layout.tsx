@@ -7,12 +7,12 @@ export async function generateMetadata(): Promise<Metadata> {
   const host = requestHeaders.get("x-forwarded-host") ?? requestHeaders.get("host") ?? "zy5120.github.io";
   const protocol = requestHeaders.get("x-forwarded-proto") ?? (host.includes("localhost") ? "http" : "https");
   const image = `${protocol}://${host}/og.png`;
-  const title = "法考主观题资料库｜完整题面与完整作答";
-  const description = "2026 法考主观题每日一题与 2016—2025 历年真题：完整训练题面、原创答案、原题及公布答案入口。";
+  const title = "2026 法考主观题资料库｜每日一题、带背与近十年真题";
+  const description = "持续收集 2026 法考老师主观题每日一题、法治思想带背与 2016—2025 主观题真题，逐条保留来源与答案入口。";
   return {
     title,
     description,
-    openGraph: { title, description, type: "website", images: [{ url: image, width: 1731, height: 909 }] },
+    openGraph: { title, description, type: "website", images: [{ url: image, width: 1672, height: 941 }] },
     twitter: { card: "summary_large_image", title, description, images: [image] },
   };
 }
