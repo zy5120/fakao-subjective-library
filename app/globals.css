@@ -87,6 +87,7 @@ main { min-height: 100vh; }
 .desktop-nav button.active { color: #fff; background: var(--green); font-weight: 720; box-shadow: 0 7px 16px rgba(15, 75, 53, .14); }
 .header-action { display: grid; min-height: 38px; padding: 0 14px; place-items: center; border: 1px solid var(--line-strong); border-radius: 10px; color: var(--green); background: rgba(255, 255, 252, .72); font-size: 11px; font-weight: 720; text-decoration: none; }
 .header-action:hover { background: #fff; }
+.mobile-more { display: none; }
 
 .site-frame { width: min(1420px, calc(100% - 40px)); margin: 0 auto; }
 .overview { padding: 30px 0 0; }
@@ -170,6 +171,15 @@ main { min-height: 100vh; }
 .daily-audit strong { color: var(--green); font-family: var(--serif); font-size: 29px; line-height: 1; }
 .daily-audit small { color: #68736d; font-size: 8px; }
 .daily-audit > p { grid-column: 1 / -1; margin: 0; padding: 13px 20px; border-top: 1px solid var(--line); color: #5f6c65; background: var(--green-3); font-size: 9px; line-height: 1.7; }
+.series-ledger { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; margin: 0 0 12px; }
+.series-ledger article { position: relative; min-height: 154px; padding: 20px; overflow: hidden; border: 1px solid var(--line); border-radius: 15px; background: rgba(255,255,252,.74); }
+.series-ledger article::after { position: absolute; right: -34px; bottom: -48px; width: 116px; height: 116px; border: 1px solid rgba(15,75,53,.08); border-radius: 50%; content: ""; box-shadow: 0 0 0 24px rgba(15,75,53,.025); }
+.series-ledger header { display: flex; align-items: center; justify-content: space-between; gap: 16px; }
+.series-ledger header span { padding: 4px 7px; border-radius: 6px; color: var(--green); background: var(--green-3); font-size: 8px; font-weight: 780; }
+.series-ledger header em { color: var(--gold); font-family: var(--serif); font-size: 18px; font-style: normal; }
+.series-ledger h2 { margin: 18px 0 4px; font-family: var(--serif); font-size: 24px; }
+.series-ledger p { margin: 0 0 8px; color: var(--ink-2); font-size: 11px; font-weight: 720; }
+.series-ledger small { color: var(--muted); font-size: 8px; line-height: 1.6; }
 .page-title-row { display: grid; min-height: 220px; grid-template-columns: minmax(0, 1fr) auto; align-items: end; gap: 40px; padding: 24px clamp(4px, 2vw, 28px) 36px; }
 .page-title-row > div:first-child { max-width: 910px; }
 .page-title-row h1 { margin-bottom: 15px; font-family: var(--serif); font-size: clamp(48px, 6vw, 78px); line-height: 1; letter-spacing: -.06em; }
@@ -336,8 +346,14 @@ footer small { font-size: 8px; }
   body { background-size: 32px 32px, 32px 32px, auto, auto; }
   .notice-bar { grid-template-columns: 1fr auto; padding-inline: 15px; }
   .notice-bar strong { display: none; }
-  .site-header { min-height: 66px; grid-template-columns: 1fr auto; padding-inline: 14px; }
+  .site-header { min-height: 66px; grid-template-columns: 1fr auto auto; gap: 8px; padding-inline: 14px; }
   .desktop-nav { display: none; }
+  .mobile-more { position: relative; display: block; }
+  .mobile-more summary { display: grid; min-height: 36px; padding: 0 11px; place-items: center; border: 1px solid var(--line-strong); border-radius: 10px; color: var(--green); background: rgba(255,255,252,.72); font-size: 9px; font-weight: 760; cursor: pointer; list-style: none; }
+  .mobile-more summary::-webkit-details-marker { display: none; }
+  .mobile-more-menu { position: absolute; top: calc(100% + 9px); right: 0; display: grid; width: 166px; gap: 5px; padding: 7px; border: 1px solid var(--line); border-radius: 13px; background: rgba(255,254,249,.98); box-shadow: 0 18px 46px rgba(14,39,29,.18); }
+  .mobile-more-menu button { min-height: 40px; padding: 0 11px; border: 0; border-radius: 8px; color: var(--ink-2); background: transparent; font-size: 10px; text-align: left; cursor: pointer; }
+  .mobile-more-menu button.active { color: #fff; background: var(--green); }
   .header-action { min-height: 36px; padding-inline: 11px; }
   .site-frame { width: min(100% - 22px, 760px); }
   .overview { padding-top: 12px; }
@@ -377,7 +393,10 @@ footer small { font-size: 8px; }
   .daily-audit { grid-template-columns: repeat(2, 1fr); }
   .daily-audit > div:nth-child(3) { border-left: 0; border-top: 1px solid var(--line); }
   .daily-audit > div:nth-child(4) { border-top: 1px solid var(--line); }
-  .mobile-nav { position: fixed; right: max(8px, env(safe-area-inset-right)); bottom: max(8px, env(safe-area-inset-bottom)); left: max(8px, env(safe-area-inset-left)); z-index: 30; display: grid; grid-template-columns: repeat(6, 1fr); min-height: 62px; padding: 5px; border: 1px solid rgba(255,255,255,.1); border-radius: 17px; background: rgba(9,43,31,.94); box-shadow: 0 14px 40px rgba(8,31,23,.28); backdrop-filter: blur(20px); }
+  .series-ledger { grid-template-columns: repeat(3, minmax(210px, 1fr)); overflow-x: auto; padding-bottom: 4px; scroll-snap-type: x proximity; scrollbar-width: none; }
+  .series-ledger::-webkit-scrollbar { display: none; }
+  .series-ledger article { min-height: 145px; scroll-snap-align: start; }
+  .mobile-nav { position: fixed; bottom: max(9px, env(safe-area-inset-bottom)); left: 50%; z-index: 30; display: grid; width: min(calc(100% - 24px), 440px); min-height: 62px; grid-template-columns: repeat(4, 1fr); padding: 5px; border: 1px solid rgba(255,255,255,.1); border-radius: 17px; background: rgba(9,43,31,.94); box-shadow: 0 14px 40px rgba(8,31,23,.28); backdrop-filter: blur(20px); transform: translateX(-50%); }
   .mobile-nav button { display: grid; min-width: 0; min-height: 50px; place-content: center; gap: 2px; border: 0; border-radius: 11px; color: rgba(232,242,236,.58); background: transparent; font-size: 8px; cursor: pointer; }
   .mobile-nav button span { font-family: var(--serif); font-size: 14px; }
   .mobile-nav button.active { color: #fff; background: rgba(255,255,255,.12); }
@@ -386,6 +405,11 @@ footer small { font-size: 8px; }
 @media (max-width: 520px) {
   .notice-bar { font-size: 8px; }
   .brand small { display: none; }
+  .brand { gap: 8px; }
+  .brand-seal { width: 32px; height: 32px; font-size: 17px; }
+  .brand strong { font-size: 12px; }
+  .site-header { gap: 6px; padding-inline: 10px; }
+  .mobile-more summary, .header-action { padding-inline: 9px; font-size: 8px; }
   .header-action { font-size: 9px; }
   .hero-copy { padding: 44px 23px 38px; }
   .hero-copy h1 { font-size: 61px; }

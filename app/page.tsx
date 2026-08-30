@@ -44,8 +44,8 @@ type Channel = (typeof channelsJson.channels)[number];
 
 const allRecords = buildRecords(libraryJson) as RecordItem[];
 const dailyRecords = allRecords.filter((record) => record.shelf === "2026 每日一题");
-const pureDailyRecords = dailyRecords.filter((record) => record.id.startsWith("2026-lijia"));
-const convertedDailyRecords = dailyRecords.filter((record) => !record.id.startsWith("2026-lijia"));
+const pureDailyRecords = dailyRecords.filter((record) => !record.id.startsWith("2026-han"));
+const hybridDailyRecords = dailyRecords.filter((record) => record.id.startsWith("2026-han"));
 const historicalRecords = allRecords.filter((record) => record.shelf === "历年真题");
 const recitations = recitationsJson.records as Recitation[];
 const channels = channelsJson.channels as Channel[];
@@ -60,11 +60,20 @@ const navItems: { id: View; label: string; short: string }[] = [
   { id: "standard", label: "收录规范", short: "规范" },
 ];
 
+const mobileNavItems = navItems.filter((item) => ["overview", "daily", "recitation", "history"].includes(item.id));
+
+const dailySeries = [
+  { teacher: "李佳", subject: "行政法", series: "主观题每日一题", indexed: 13, published: "13", note: "题面 13/13；答案 12/13 单篇定位" },
+  { teacher: "孟献贵", subject: "民法", series: "主观题案例带写", indexed: 9, published: "238", note: "已接入第 225—232、238 题" },
+  { teacher: "韩心怡", subject: "民诉", series: "每日一问·主客一体", indexed: 7, published: "71+", note: "已接入 Day 64—70；系列已收官" },
+];
+
 function sourceKind(record: RecordItem) {
   if (record.shelf === "历年真题") return record.year <= 2017 ? "官方公开题" : "公开回忆版";
-  if (record.id.startsWith("2026-lijia")) return "纯主观·教师每日一题";
-  if (record.id.startsWith("2026-meng")) return "主客观一体·主观化训练";
-  return "主观题训练";
+  if (record.id.startsWith("2026-lijia")) return "纯主观·每日一题";
+  if (record.id.startsWith("2026-meng")) return "纯主观·案例带写";
+  if (record.id.startsWith("2026-han")) return "主客一体·可主观作答";
+  return "主观训练";
 }
 
 function sourcePrecision(record: RecordItem) {
@@ -85,6 +94,11 @@ function formatDate(value: string) {
 }
 
 function StudyHeader({ view, setView, daysLeft }: { view: View; setView: (view: View) => void; daysLeft: number }) {
+  function chooseMobileView(event: React.MouseEvent<HTMLButtonElement>, nextView: View) {
+    setView(nextView);
+    const details = event.currentTarget.closest("details") as HTMLDetailsElement | null;
+    if (details) details.open = false;
+  }
   return (
     <>
       <div className="notice-bar">
@@ -100,6 +114,13 @@ function StudyHeader({ view, setView, daysLeft }: { view: View; setView: (view: 
         <nav className="desktop-nav" aria-label="资料库主导航">
           {navItems.map((item) => <button key={item.id} className={view === item.id ? "active" : ""} onClick={() => setView(item.id)}>{item.label}</button>)}
         </nav>
+        <details className="mobile-more">
+          <summary>更多</summary>
+          <div className="mobile-more-menu">
+            <button className={view === "channels" ? "active" : ""} onClick={(event) => chooseMobileView(event, "channels")}>渠道中心</button>
+            <button className={view === "standard" ? "active" : ""} onClick={(event) => chooseMobileView(event, "standard")}>收录规范</button>
+          </div>
+        </details>
         <a className="header-action" href="/downloads/法考主观题私人自学册-完整重构题面与原创答案.pdf" download>下载学习册</a>
       </header>
     </>
@@ -130,7 +151,7 @@ function Overview({ setView, daysLeft }: { setView: (view: View) => void; daysLe
       </section>
 
       <section className="metric-grid" aria-label="资料库统计">
-        <button onClick={() => setView("daily")}><span>01</span><strong>{pureDailyRecords.length}<i>+{convertedDailyRecords.length}</i></strong><p>纯主观 / 主观化训练</p><small>13 道教师主观题已逐题定位</small></button>
+        <button onClick={() => setView("daily")}><span>01</span><strong>{pureDailyRecords.length}<i>+{hybridDailyRecords.length}</i></strong><p>纯主观 / 主客一体</p><small>{dailySeries.length} 位老师 · {dailyRecords.length} 道完整训练</small></button>
         <button onClick={() => setView("recitation")}><span>02</span><strong>{recitations.length}</strong><p>法治思想带背专题</p><small>已按十二个坚持更新</small></button>
         <button onClick={() => setView("history")}><span>03</span><strong>{historicalRecords.length}</strong><p>历年分题训练</p><small>覆盖 2016—2025</small></button>
         <button onClick={() => setView("channels")}><span>04</span><strong>{connected}/{channels.length}</strong><p>已接入 / 全部渠道</p><small>保留后续扩展位</small></button>
@@ -205,14 +226,16 @@ function LibraryWorkspace({ mode }: { mode: "daily" | "history" }) {
   const source = mode === "daily" ? dailyRecords : historicalRecords;
   const [query, setQuery] = useState("");
   const [subject, setSubject] = useState("全部科目");
+  const [teacher, setTeacher] = useState("全部老师");
   const [year, setYear] = useState("全部年份");
   const [selectedId, setSelectedId] = useState(source[0]?.id ?? "");
   const subjects = useMemo(() => unique(source.map((record) => record.subject)), [source]);
+  const teachers = useMemo(() => unique(source.map((record) => record.teacher)), [source]);
   const years = useMemo(() => unique(source.map((record) => String(record.year))).sort((a, b) => Number(b) - Number(a)), [source]);
   const filtered = useMemo(() => {
     const needle = query.trim().toLowerCase();
-    return source.filter((record) => (subject === "全部科目" || record.subject === subject) && (year === "全部年份" || String(record.year) === year) && (!needle || [record.title, record.topic, record.completeQuestion, record.completeAnswer.conclusion, record.institution, record.teacher].join(" ").toLowerCase().includes(needle)));
-  }, [query, source, subject, year]);
+    return source.filter((record) => (subject === "全部科目" || record.subject === subject) && (teacher === "全部老师" || record.teacher === teacher) && (year === "全部年份" || String(record.year) === year) && (!needle || [record.title, record.topic, record.completeQuestion, record.completeAnswer.conclusion, record.institution, record.teacher].join(" ").toLowerCase().includes(needle)));
+  }, [query, source, subject, teacher, year]);
   const selected = filtered.find((record) => record.id === selectedId) ?? filtered[0] ?? source[0];
 
   return (
@@ -222,22 +245,31 @@ function LibraryWorkspace({ mode }: { mode: "daily" | "history" }) {
         <div className="title-stat"><strong>{filtered.length}</strong><span>当前结果</span></div>
       </header>
       {mode === "daily" && <div className="daily-audit" aria-label="2026 每日一题收录审计">
-        <div><span>纯主观已发布</span><strong>13</strong><small>李佳第 1—13 题</small></div>
-        <div><span>题目单篇页</span><strong>13/13</strong><small>全部逐题定位</small></div>
-        <div><span>答案单篇页</span><strong>12/13</strong><small>第 13 题答案索引待稳定</small></div>
-        <div><span>主观化训练</span><strong>8</strong><small>单列，不与纯主观混算</small></div>
-        <p>截至 2026-08-31，检索到明确以“主观题每日一题”连续发布且题面、答案均公开的 2026 新系列为李佳行政法；其他老师当前大量“每日一题”为客观题，已登记渠道，但不拿来冒充纯主观题。</p>
+        <div><span>已结构化入库</span><strong>{dailyRecords.length}</strong><small>均含完整训练题面与答案</small></div>
+        <div><span>已接入老师</span><strong>{dailySeries.length}</strong><small>行政法、民法、民诉</small></div>
+        <div><span>纯主观训练</span><strong>{pureDailyRecords.length}</strong><small>李佳每日一题 + 孟献贵案例带写</small></div>
+        <div><span>主客一体主观题</span><strong>{hybridDailyRecords.length}</strong><small>韩心怡 Day 64—70</small></div>
+        <p>截至 2026-08-31，已核到李佳、孟献贵、韩心怡三个连续栏目。柏浪涛、左宁、郄鹏恩等同名“每日一题”当前以客观选择题为主，只登记在渠道中心，不计入主观题数量。</p>
       </div>}
+      {mode === "daily" && <section className="series-ledger" aria-label="教师系列接入台账">
+        {dailySeries.map((series) => <article key={series.teacher}>
+          <header><span>{series.subject}</span><em>{series.indexed}/{series.published}</em></header>
+          <h2>{series.teacher}</h2>
+          <p>{series.series}</p>
+          <small>{series.note}</small>
+        </article>)}
+      </section>}
       <div className="workspace-toolbar">
         <label className="search-box"><span>⌕</span><input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="搜索案情、争点、老师、规则……" aria-label="搜索题库" /></label>
         <label><span>科目</span><select value={subject} onChange={(event) => setSubject(event.target.value)}><option>全部科目</option>{subjects.map((item) => <option key={item}>{item}</option>)}</select></label>
+        {mode === "daily" && <label><span>老师</span><select value={teacher} onChange={(event) => setTeacher(event.target.value)}><option>全部老师</option>{teachers.map((item) => <option key={item}>{item}</option>)}</select></label>}
         {mode === "history" && <label><span>年份</span><select value={year} onChange={(event) => setYear(event.target.value)}><option>全部年份</option>{years.map((item) => <option key={item}>{item}</option>)}</select></label>}
       </div>
       <div className="study-workspace">
         <aside className="workspace-rail">
           <div className="rail-block"><span>资料类型</span><strong>{mode === "daily" ? "2026 持续更新" : "近十年归档"}</strong><p>{mode === "daily" ? "纯主观题优先；主客观一体内容明确标注。" : "回忆版必须使用条件式结论处理事实缺口。"}</p></div>
           <div className="rail-block"><span>完整性标准</span><ul><li>题面范围明确</li><li>设问可以独立作答</li><li>答案有规则与涵摄</li><li>原文与核验状态可追溯</li></ul></div>
-          <button onClick={() => { setQuery(""); setSubject("全部科目"); setYear("全部年份"); }}>清空全部筛选</button>
+          <button onClick={() => { setQuery(""); setSubject("全部科目"); setTeacher("全部老师"); setYear("全部年份"); }}>清空全部筛选</button>
         </aside>
         <div className="record-index" aria-label="题目列表">
           <div className="index-head"><strong>{mode === "daily" ? "训练目录" : "真题目录"}</strong><span>{filtered.length} 条</span></div>
@@ -371,7 +403,7 @@ export default function Home() {
         {view === "standard" && <StandardView />}
       </div>
       <footer><div><span className="brand-seal">法</span><p><strong>法考主观题资料库</strong><small>持续更新至 2026 年 10 月 18 日</small></p></div><p>公开学习整理 · 原题与公布答案请从来源页核对 · 核验截止 2026-08-31</p></footer>
-      <nav className="mobile-nav" aria-label="移动端主导航">{navItems.map((item) => <button key={item.id} className={view === item.id ? "active" : ""} onClick={() => setView(item.id)}><span>{item.id === "overview" ? "⌂" : item.id === "daily" ? "题" : item.id === "recitation" ? "背" : item.id === "history" ? "卷" : item.id === "channels" ? "源" : "规"}</span>{item.short}</button>)}</nav>
+      <nav className="mobile-nav" aria-label="移动端主导航">{mobileNavItems.map((item) => <button key={item.id} className={view === item.id ? "active" : ""} onClick={() => setView(item.id)}><span>{item.id === "overview" ? "⌂" : item.id === "daily" ? "题" : item.id === "recitation" ? "背" : "卷"}</span>{item.id === "daily" ? "题库" : item.short}</button>)}</nav>
     </main>
   );
 }

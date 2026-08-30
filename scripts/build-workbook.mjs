@@ -5,6 +5,7 @@ import { SpreadsheetFile, Workbook } from "@oai/artifact-tool";
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const data = JSON.parse(await fs.readFile(path.join(root, "data/library.json"), "utf8"));
+const channelsData = JSON.parse(await fs.readFile(path.join(root, "data/channels.json"), "utf8"));
 const outputDir = path.join(root, "outputs/01a053f4-c3bb-7790-a432-e754bb16040b");
 const previewDir = path.join(root, "tmp/workbook-previews");
 await fs.mkdir(outputDir, { recursive: true });
@@ -105,14 +106,18 @@ summary.getRange("B:B").format.columnWidth = 14;
 summary.getRange("D:H").format.columnWidth = 18;
 summary.getRange("A4:H15").format.rowHeight = 27;
 
-setTitle(daily, "2026 主观题每日一题｜公开核验库", "来源答案摘要与本库主观作答框架分列；纯客观题不入库", "P");
-const dailyHeaders = ["ID", "日期", "机构", "老师", "平台", "科目", "争点", "标题", "题面摘要", "来源答案摘要", "主观作答框架", "易错点", "答案状态", "可信度", "来源链接", "核验日"];
-const dailyRows = data.dailyQuestions.map((q) => [q.id, q.date, q.institution, q.teacher, q.platform, q.subject, q.topic, q.title, q.questionSummary, q.sourceAnswer, q.organizedAnswer.map((step, index) => `${index + 1}. ${step}`).join("\n"), q.pitfall, q.answerState, q.confidence, q.sourceUrl, q.verifiedAt]);
-daily.getRange(`A3:P${dailyRows.length + 3}`).values = [dailyHeaders, ...dailyRows];
-styleDataSheet(daily, "P", dailyRows.length + 3);
-daily.tables.add(`A3:P${dailyRows.length + 3}`, true, "DailyQuestionsTable").style = "TableStyleMedium4";
-const dailyWidths = [18, 12, 13, 10, 18, 11, 24, 30, 46, 52, 56, 30, 16, 22, 36, 12];
+setTitle(daily, "2026 主观题每日一题｜完整题答核验库", "完整训练题面、作答任务、公布答案要旨与本库完整作答分列；纯客观题不入库", "R");
+const dailyHeaders = ["ID", "日期", "机构", "老师", "平台", "科目", "争点", "标题", "完整训练题面", "作答任务", "公布答案要旨", "本库完整作答框架", "易错点", "答案状态", "可信度", "题目来源", "答案来源", "核验日"];
+const dailyRows = data.dailyQuestions.map((q) => [q.id, new Date(`${q.date}T00:00:00+08:00`), q.institution, q.teacher, q.platform, q.subject, q.topic, q.title, q.questionText, q.trainingQuestions.map((task, index) => `${index + 1}. ${task}`).join("\n"), q.sourceAnswer, q.organizedAnswer.map((step, index) => `${index + 1}. ${step}`).join("\n"), q.pitfall, q.answerState, q.confidence, q.sourceUrl, q.answerUrl ?? q.sourceUrl, q.verifiedAt]);
+daily.getRange(`A3:R${dailyRows.length + 3}`).values = [dailyHeaders, ...dailyRows];
+styleDataSheet(daily, "R", dailyRows.length + 3);
+daily.tables.add(`A3:R${dailyRows.length + 3}`, true, "DailyQuestionsTable").style = "TableStyleMedium4";
+const dailyWidths = [18, 12, 13, 10, 18, 11, 24, 30, 72, 42, 52, 56, 30, 18, 22, 38, 38, 12];
 dailyWidths.forEach((width, index) => daily.getRangeByIndexes(0, index, dailyRows.length + 3, 1).format.columnWidth = width);
+daily.getRange(`B4:B${dailyRows.length + 3}`).format.numberFormat = "yyyy-mm-dd";
+daily.getRange(`A4:R${dailyRows.length + 3}`).format.rowHeight = 130;
+const longestQuestionRow = data.dailyQuestions.findIndex((item) => item.id === "2026-meng-238") + 4;
+daily.getRange(`A${longestQuestionRow}:R${longestQuestionRow}`).format.rowHeight = 230;
 
 setTitle(history, "2016—2025 主观题真题｜分题索引", "2016—2017 为官方公开；2018—2025 为公开回忆版，摘要不替代完整题面", "K");
 const historyHeaders = ["年份", "考试名称", "题号", "科目", "争点", "题面摘要", "答案/作答主线", "可信度", "题目来源", "答案来源", "卷别说明"];
@@ -123,24 +128,24 @@ history.tables.add(`A3:K${historyRows.length + 3}`, true, "HistoricalQuestionsTa
 const historyWidths = [9, 31, 10, 18, 27, 48, 54, 22, 36, 36, 42];
 historyWidths.forEach((width, index) => history.getRangeByIndexes(0, index, historyRows.length + 3, 1).format.columnWidth = width);
 
-setTitle(coverage, "2026 主观题机构覆盖与检索缺口", "未检索到公开归档不等于机构没有课程；客观题系列单列排除", "E");
-const coverageHeaders = ["机构/系列", "老师", "状态", "核验说明", "公开依据"];
-const coverageRows = data.coverage.map((item) => [item.institution, item.teachers, item.status, item.detail, item.sourceUrl]);
-coverage.getRange(`A3:E${coverageRows.length + 3}`).values = [coverageHeaders, ...coverageRows];
-styleDataSheet(coverage, "E", coverageRows.length + 3);
-coverage.tables.add(`A3:E${coverageRows.length + 3}`, true, "CoverageTable").style = "TableStyleMedium4";
-[20, 30, 15, 68, 42].forEach((width, index) => coverage.getRangeByIndexes(0, index, coverageRows.length + 3, 1).format.columnWidth = width);
+setTitle(coverage, "2026 主观题机构与教师渠道台账", "18 个渠道分级管理；已接入、持续追踪、客观题排除和后续补录状态均保留", "F");
+const coverageHeaders = ["机构", "老师", "系列", "内容类型 / 状态", "核验说明", "公开依据"];
+const coverageRows = channelsData.channels.map((item) => [item.institution, item.teacher, item.series, `${item.contentType}｜${item.status}`, item.notes, item.primaryUrl]);
+coverage.getRange(`A3:F${coverageRows.length + 3}`).values = [coverageHeaders, ...coverageRows];
+styleDataSheet(coverage, "F", coverageRows.length + 3);
+coverage.tables.add(`A3:F${coverageRows.length + 3}`, true, "CoverageTable").style = "TableStyleMedium4";
+[24, 18, 42, 26, 70, 42].forEach((width, index) => coverage.getRangeByIndexes(0, index, coverageRows.length + 3, 1).format.columnWidth = width);
 
 setTitle(fields, "字段与可信度说明", "用于后续人工追加、核验和增量更新", "D");
 const fieldRows = [
   ["字段", "含义", "填写规则", "示例"],
-  ["题面摘要", "公开题目的结构化概述", "避免大段转载；保留关键事实与设问", "谁是被告、行为性质如何判断"],
-  ["来源答案摘要", "老师或公开解析的压缩", "忠实于来源；存在分歧时明确列出", "主流观点……另一观点……"],
-  ["主观作答框架", "便于落笔的标准化表达", "争点—规范—涵摄—结论", "先识别行为，再判断依据……"],
+  ["完整训练题面", "依据公开原题整理的完整案情与设问", "保留全部作答所需事实；措辞整理不改变法律关系", "案情 + 明确设问"],
+  ["公布答案要旨", "老师或公开解析的完整采分点整理", "忠实保留结论、规则和理由；原页链接单列", "结论 + 规则 + 涵摄"],
+  ["本库完整作答", "便于落笔的结构化完整答案", "结论—规范—涵摄—分支", "先结论，再逐项说明理由"],
   ["官方公布", "司法行政机关正式公开", "当前主要适用于 2016—2017", "2017 司法考试试卷四"],
   ["回忆版·多源核验", "考生回忆与教师解析可相互印证", "不得称为官方题面或标准答案", "2018—2025"],
   ["题面已核验·答案待核验", "题目可见但答案尚未稳定获取", "不推测教师结论", "2026 李佳第 13 题"],
-  ["持续追踪", "尚无可逐题核验的公开主观题归档", "只进入覆盖表，不进入题库正文", "课程内或登录后可见"],
+  ["持续追踪", "尚无可逐题核验的公开主观题归档", "只进入渠道台账，不进入题库正文", "课程内或登录后可见"],
 ];
 fields.getRange(`A3:D${fieldRows.length + 2}`).values = fieldRows;
 styleDataSheet(fields, "D", fieldRows.length + 2);
@@ -149,9 +154,9 @@ fields.tables.add(`A3:D${fieldRows.length + 2}`, true, "FieldGuideTable").style 
 
 const renderSpecs = [
   ["总览", "A1:H15", "overview.png"],
-  ["2026每日一题", "A1:P14", "daily.png"],
+  ["2026每日一题", "A1:R14", "daily.png"],
   ["历年真题", "A1:K15", "history.png"],
-  ["机构覆盖", `A1:E${coverageRows.length + 3}`, "coverage.png"],
+  ["机构覆盖", `A1:F${coverageRows.length + 3}`, "coverage.png"],
   ["字段说明", `A1:D${fieldRows.length + 2}`, "fields.png"],
 ];
 
@@ -162,6 +167,10 @@ for (const [sheetName, range, filename] of renderSpecs) {
 
 const inspection = await workbook.inspect({ kind: "sheet", include: "id,name", maxChars: 5000 });
 console.log(inspection.ndjson ?? inspection);
+const summaryInspection = await workbook.inspect({ kind: "table", range: "总览!A4:B7", include: "values,formulas", tableMaxRows: 8, tableMaxCols: 4, maxChars: 3000 });
+console.log(summaryInspection.ndjson ?? summaryInspection);
+const formulaErrorInspection = await workbook.inspect({ kind: "match", searchTerm: "#REF!|#DIV/0!|#VALUE!|#NAME\\?|#N/A", options: { useRegex: true, maxResults: 100 }, summary: "final formula error scan", maxChars: 3000 });
+console.log(formulaErrorInspection.ndjson ?? formulaErrorInspection);
 
 let errors = [];
 for (const sheetName of ["总览", "2026每日一题", "历年真题", "机构覆盖", "字段说明"]) {

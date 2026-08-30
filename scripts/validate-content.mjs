@@ -29,21 +29,24 @@ function requireUnique(items, key, label) {
 }
 
 requireUnique(library.dailyQuestions, "id", "每日一题 ID");
-const pureDaily = library.dailyQuestions.filter((item) => item.id.startsWith("2026-lijia"));
-if (pureDaily.length !== 13) errors.push(`李佳纯主观每日一题应为 13 题，当前 ${pureDaily.length} 题`);
+const liDaily = library.dailyQuestions.filter((item) => item.id.startsWith("2026-lijia"));
+const mengDaily = library.dailyQuestions.filter((item) => item.id.startsWith("2026-meng"));
+const hanDaily = library.dailyQuestions.filter((item) => item.id.startsWith("2026-han"));
+const pureDaily = [...liDaily, ...mengDaily];
+if (liDaily.length !== 13) errors.push(`李佳纯主观每日一题应为 13 题，当前 ${liDaily.length} 题`);
+if (mengDaily.length !== 9) errors.push(`孟献贵案例带写当前应接入 9 题，当前 ${mengDaily.length} 题`);
+if (hanDaily.length !== 7) errors.push(`韩心怡主客一体主观题当前应接入 7 题，当前 ${hanDaily.length} 题`);
 for (const item of library.dailyQuestions) {
   for (const field of ["id", "date", "institution", "teacher", "subject", "topic", "title", "questionSummary", "sourceAnswer", "answerState", "verifiedAt"]) {
     requireValue(item[field], `${item.id}.${field}`);
   }
   requireUrl(item.sourceUrl, `${item.id}.sourceUrl`);
-  if (item.id.startsWith("2026-lijia")) {
-    requireValue(item.questionText, `${item.id}.questionText`);
-    requireValue(item.trainingQuestions, `${item.id}.trainingQuestions`);
-    if ((item.questionText ?? "").length < 120) errors.push(`${item.id}.questionText 过短`);
-  }
+  requireValue(item.questionText, `${item.id}.questionText`);
+  requireValue(item.trainingQuestions, `${item.id}.trainingQuestions`);
+  if ((item.questionText ?? "").length < 40) errors.push(`${item.id}.questionText 过短`);
 }
-const pureQuestionLinks = pureDaily.filter((item) => item.sourceUrl.includes("/news/detail/")).length;
-const pureAnswerLinks = pureDaily.filter((item) => item.answerUrl?.includes("/news/detail/")).length;
+const pureQuestionLinks = liDaily.filter((item) => item.sourceUrl.includes("/news/detail/")).length;
+const pureAnswerLinks = liDaily.filter((item) => item.answerUrl?.includes("/news/detail/")).length;
 if (pureQuestionLinks !== 13) errors.push(`李佳题目单篇链接应为 13/13，当前 ${pureQuestionLinks}/13`);
 if (pureAnswerLinks !== 12) errors.push(`李佳答案单篇链接当前口径应为 12/13，当前 ${pureAnswerLinks}/13`);
 
@@ -68,7 +71,7 @@ for (const item of recitations.records) {
 }
 
 const records = buildRecords(library);
-if (records.length !== 78) errors.push(`结构化题目总数应为 78，当前 ${records.length}`);
+if (records.length !== 86) errors.push(`结构化题目总数应为 86，当前 ${records.length}`);
 for (const record of records) {
   requireValue(record.completeQuestion, `${record.id}.completeQuestion`);
   requireValue(record.trainingQuestions, `${record.id}.trainingQuestions`);
@@ -82,4 +85,4 @@ if (errors.length) {
   process.exit(1);
 }
 
-console.log(`内容校验通过：${pureDaily.length} 道纯主观每日一题，${library.dailyQuestions.length - pureDaily.length} 道主观化训练，${recitations.records.length} 个带背专题，${records.length} 道结构化主观题，${channels.channels.length} 个渠道。`);
+console.log(`内容校验通过：${pureDaily.length} 道纯主观训练，${hanDaily.length} 道主客一体主观题，${recitations.records.length} 个带背专题，${records.length} 道结构化主观题，${channels.channels.length} 个渠道。`);

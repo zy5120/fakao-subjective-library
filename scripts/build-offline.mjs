@@ -44,16 +44,22 @@ const html = `<!doctype html>
     const channels = data.channels.channels;
     const recitations = data.recitations.records;
     const daily = records.filter((item) => item.shelf === "2026 每日一题");
-    const pureDaily = daily.filter((item) => item.id.startsWith("2026-lijia"));
-    const convertedDaily = daily.filter((item) => !item.id.startsWith("2026-lijia"));
+    const pureDaily = daily.filter((item) => !item.id.startsWith("2026-han"));
+    const hybridDaily = daily.filter((item) => item.id.startsWith("2026-han"));
     const history = records.filter((item) => item.shelf === "历年真题");
     const navItems = [
       ["overview", "备考总览", "总览", "⌂"], ["daily", "每日一题", "日练", "题"],
       ["recitation", "法治思想带背", "带背", "背"], ["history", "历年真题", "真题", "卷"],
       ["channels", "渠道中心", "渠道", "源"], ["standard", "收录规范", "规范", "规"]
     ];
+    const mobileNavItems = navItems.filter((item) => ["overview","daily","recitation","history"].includes(item[0]));
+    const dailySeries = [
+      {teacher:"李佳",subject:"行政法",series:"主观题每日一题",indexed:13,published:"13",note:"题面 13/13；答案 12/13 单篇定位"},
+      {teacher:"孟献贵",subject:"民法",series:"主观题案例带写",indexed:9,published:"238",note:"已接入第 225—232、238 题"},
+      {teacher:"韩心怡",subject:"民诉",series:"每日一问·主客一体",indexed:7,published:"71+",note:"已接入 Day 64—70；系列已收官"}
+    ];
     const state = {
-      view: "overview", query: "", subject: "全部科目", year: "全部年份",
+      view: "overview", query: "", subject: "全部科目", teacher: "全部老师", year: "全部年份",
       selectedDaily: pureDaily[0]?.id || daily[0]?.id || "", selectedHistory: history[0]?.id || "",
       selectedRecitation: recitations[0]?.id || "", recitationQuery: "", channelQuery: "", concealed: false,
       completed: (() => { try { return JSON.parse(localStorage.getItem("fakao-recitation-progress") || "[]"); } catch { return []; } })()
@@ -63,13 +69,14 @@ const html = `<!doctype html>
     const examDays = Math.max(0, Math.ceil((new Date("2026-10-18T09:00:00+08:00").getTime() - Date.now()) / 86400000));
     const dateLabel = (value) => /^\\d{4}-\\d{2}-\\d{2}$/.test(value) ? value.slice(5).replace("-", ".") : value;
     const tone = (value) => value.includes("官方") || value.includes("核验") || value.includes("接入") ? "verified" : value.includes("待") || value.includes("预留") ? "pending" : "watch";
-    const sourceKind = (record) => record.shelf === "历年真题" ? (record.year <= 2017 ? "官方公开题" : "公开回忆版") : record.id.startsWith("2026-lijia") ? "纯主观·教师每日一题" : record.id.startsWith("2026-meng") ? "主客观一体·主观化训练" : "主观题训练";
+    const sourceKind = (record) => record.shelf === "历年真题" ? (record.year <= 2017 ? "官方公开题" : "公开回忆版") : record.id.startsWith("2026-lijia") ? "纯主观·每日一题" : record.id.startsWith("2026-meng") ? "纯主观·案例带写" : record.id.startsWith("2026-han") ? "主客一体·可主观作答" : "主观训练";
     const sourcePrecision = (record) => record.shelf === "历年真题" ? (record.year <= 2017 ? "题源明确" : "回忆资料") : record.sourceUrl.includes("/media/") ? "系列页已定位·单篇待补" : "单篇原文已定位";
 
     function header() {
       return '<div class="notice-bar"><div><span class="live-dot"></span>资料持续更新至考试</div><strong>2026 主观题 · 10 月 18 日 09:00—13:00</strong><span>距离考试 '+examDays+' 天</span></div>'+
         '<header class="site-header"><a class="brand" href="#" data-view="overview" aria-label="返回备考总览"><span class="brand-seal">法</span><span><strong>主观题资料库</strong><small>SUBJECTIVE LAW LIBRARY</small></span></a>'+
         '<nav class="desktop-nav" aria-label="资料库主导航">'+navItems.map((item) => '<button data-view="'+item[0]+'" class="'+(state.view === item[0] ? "active" : "")+'">'+item[1]+'</button>').join("")+'</nav>'+
+        '<details class="mobile-more"><summary>更多</summary><div class="mobile-more-menu"><button data-view="channels" class="'+(state.view === "channels" ? "active" : "")+'">渠道中心</button><button data-view="standard" class="'+(state.view === "standard" ? "active" : "")+'">收录规范</button></div></details>'+
         '<a class="header-action" href="downloads/法考主观题私人自学册-完整重构题面与原创答案.pdf" download>下载学习册</a></header>';
     }
 
@@ -77,7 +84,7 @@ const html = `<!doctype html>
       const connected = channels.filter((item) => item.status.includes("接入") || item.status.includes("追踪")).length;
       const p0 = channels.filter((item) => item.priority === "P0");
       return '<div class="overview" id="top"><section class="hero-panel"><div class="hero-copy"><p class="kicker">2026 法考主观题备考中枢</p><h1>收得全，<br><em>核得准。</em></h1><p>每日一题、法治思想带背和近十年真题统一归档。每条资料都标明题型、来源、核验层级与答案性质，后续新增老师和平台无需重做网页。</p><div class="hero-actions"><button class="primary-button" data-view="daily">开始今日训练 <span>→</span></button><button class="secondary-button" data-view="recitation">背十二个坚持</button></div></div><aside class="countdown-card"><div class="countdown-label"><span>考试倒计时</span><small>司法部公告已核验</small></div><strong>'+examDays+'</strong><p>天</p><div class="exam-meta"><span>10 月 18 日</span><span>240 分钟</span><span>计算机化考试</span></div><a href="https://www.chinalaw.gov.cn/jgsz/jgszzsdw/zsdwgjsfkszx/" target="_blank" rel="noreferrer">查看司法部考试中心 ↗</a></aside></section>'+
-        '<section class="metric-grid" aria-label="资料库统计"><button data-view="daily"><span>01</span><strong>'+pureDaily.length+'<i>+'+convertedDaily.length+'</i></strong><p>纯主观 / 主观化训练</p><small>李佳第 1—13 题已逐题定位</small></button><button data-view="recitation"><span>02</span><strong>'+recitations.length+'</strong><p>法治思想带背专题</p><small>已按十二个坚持更新</small></button><button data-view="history"><span>03</span><strong>'+history.length+'</strong><p>历年分题训练</p><small>覆盖 2016—2025</small></button><button data-view="channels"><span>04</span><strong>'+connected+'/'+channels.length+'</strong><p>已接入 / 全部渠道</p><small>保留后续扩展位</small></button></section>'+
+        '<section class="metric-grid" aria-label="资料库统计"><button data-view="daily"><span>01</span><strong>'+pureDaily.length+'<i>+'+hybridDaily.length+'</i></strong><p>纯主观 / 主客一体</p><small>'+dailySeries.length+' 位老师 · '+daily.length+' 道完整训练</small></button><button data-view="recitation"><span>02</span><strong>'+recitations.length+'</strong><p>法治思想带背专题</p><small>已按十二个坚持更新</small></button><button data-view="history"><span>03</span><strong>'+history.length+'</strong><p>历年分题训练</p><small>覆盖 2016—2025</small></button><button data-view="channels"><span>04</span><strong>'+connected+'/'+channels.length+'</strong><p>已接入 / 全部渠道</p><small>保留后续扩展位</small></button></section>'+
         '<section class="dashboard-grid"><article class="focus-card update-card"><div class="section-cap"><span>2026 重要更新</span><small>必须改背</small></div><p class="update-number">12</p><h2>“十一个坚持”已更新为“十二个坚持”</h2><p>新增“坚持依法治国和依规治党有机统一”；第五项更新为“坚持在法治轨道上全面建设社会主义现代化国家”。</p><button data-view="recitation">打开新增必背专题 →</button></article><article class="focus-card workflow-card"><div class="section-cap"><span>资料入库流程</span><small>每条可追溯</small></div><ol><li><b>发现</b><span>机构、老师、平台与公开转载</span></li><li><b>定位</b><span>原题、公布答案与单篇链接</span></li><li><b>核验</b><span>题型、事实、结论和发布时间</span></li><li><b>整理</b><span>题面—设问—规则—涵摄—结论</span></li><li><b>发布</b><span>保留来源、版本和复核状态</span></li></ol></article><article class="focus-card channel-card"><div class="section-cap"><span>本周重点追踪</span><small>'+esc(data.channels.lastReviewed)+'</small></div><div class="channel-mini-list">'+p0.map((item) => '<div><span class="mini-status '+tone(item.status)+'"></span><p><strong>'+esc(item.teacher)+'</strong><small>'+esc(item.series)+'</small></p><em>'+esc(item.status)+'</em></div>').join("")+'</div><button data-view="channels">查看全部渠道与下次核验 →</button></article></section></div>';
     }
 
@@ -93,14 +100,16 @@ const html = `<!doctype html>
       const source = mode === "daily" ? daily : history;
       const selectedKey = mode === "daily" ? "selectedDaily" : "selectedHistory";
       const query = state.query.trim().toLowerCase();
-      const filtered = source.filter((item) => (state.subject === "全部科目" || item.subject === state.subject) && (mode === "daily" || state.year === "全部年份" || String(item.year) === state.year) && (!query || [item.title,item.topic,item.completeQuestion,item.completeAnswer.conclusion,item.institution,item.teacher].join(" ").toLowerCase().includes(query)));
+      const filtered = source.filter((item) => (state.subject === "全部科目" || item.subject === state.subject) && (mode !== "daily" || state.teacher === "全部老师" || item.teacher === state.teacher) && (mode === "daily" || state.year === "全部年份" || String(item.year) === state.year) && (!query || [item.title,item.topic,item.completeQuestion,item.completeAnswer.conclusion,item.institution,item.teacher].join(" ").toLowerCase().includes(query)));
       const selected = filtered.find((item) => item.id === state[selectedKey]) || filtered[0] || source[0];
       if (selected && !filtered.find((item) => item.id === state[selectedKey])) state[selectedKey] = selected.id;
       const subjects = uniq(source.map((item) => item.subject));
+      const teachers = uniq(source.map((item) => item.teacher));
       const years = uniq(source.map((item) => String(item.year))).sort((a,b) => Number(b)-Number(a));
-      const audit = mode === "daily" ? '<div class="daily-audit" aria-label="2026 每日一题收录审计"><div><span>纯主观已发布</span><strong>13</strong><small>李佳第 1—13 题</small></div><div><span>题目单篇页</span><strong>13/13</strong><small>全部逐题定位</small></div><div><span>答案单篇页</span><strong>12/13</strong><small>第 13 题答案索引待稳定</small></div><div><span>主观化训练</span><strong>'+convertedDaily.length+'</strong><small>单列，不与纯主观混算</small></div><p>截至 2026-08-31，明确以“主观题每日一题”连续发布且题面、答案均公开的新系列为李佳行政法；其他老师大量同名栏目实际为客观题，已登记渠道，不拿来冒充纯主观题。</p></div>' : '';
-      return '<section class="workspace-page"><header class="page-title-row"><div><p class="kicker">'+(mode === "daily" ? "2026 DAILY PRACTICE" : "2016—2025 ARCHIVE")+'</p><h1>'+(mode === "daily" ? "每日一题工作台" : "近十年真题库")+'</h1><p>'+(mode === "daily" ? "持续收集至 10 月 18 日。主客观一体题只有在能够独立形成法律论证时才入库。" : "2016—2017 为官方公开题；2018—2025 按公开回忆版管理，事实缺口不补造。")+'</p></div><div class="title-stat"><strong>'+filtered.length+'</strong><span>当前结果</span></div></header>'+audit+
-        '<div class="workspace-toolbar"><label class="search-box"><span>⌕</span><input id="library-query" value="'+esc(state.query)+'" placeholder="搜索案情、争点、老师、规则……" aria-label="搜索题库"></label><label><span>科目</span><select id="subject-filter"><option>全部科目</option>'+subjects.map((item) => '<option '+(item === state.subject ? "selected" : "")+'>'+esc(item)+'</option>').join("")+'</select></label>'+(mode === "history" ? '<label><span>年份</span><select id="year-filter"><option>全部年份</option>'+years.map((item) => '<option '+(item === state.year ? "selected" : "")+'>'+esc(item)+'</option>').join("")+'</select></label>' : '')+'</div>'+
+      const audit = mode === "daily" ? '<div class="daily-audit" aria-label="2026 每日一题收录审计"><div><span>已结构化入库</span><strong>'+daily.length+'</strong><small>均含完整训练题面与答案</small></div><div><span>已接入老师</span><strong>'+dailySeries.length+'</strong><small>行政法、民法、民诉</small></div><div><span>纯主观训练</span><strong>'+pureDaily.length+'</strong><small>李佳每日一题 + 孟献贵案例带写</small></div><div><span>主客一体主观题</span><strong>'+hybridDaily.length+'</strong><small>韩心怡 Day 64—70</small></div><p>截至 2026-08-31，已核到李佳、孟献贵、韩心怡三个连续栏目。柏浪涛、左宁、郄鹏恩等同名“每日一题”当前以客观选择题为主，只登记在渠道中心，不计入主观题数量。</p></div>' : '';
+      const ledger = mode === "daily" ? '<section class="series-ledger" aria-label="教师系列接入台账">'+dailySeries.map((item) => '<article><header><span>'+item.subject+'</span><em>'+item.indexed+'/'+item.published+'</em></header><h2>'+item.teacher+'</h2><p>'+item.series+'</p><small>'+item.note+'</small></article>').join("")+'</section>' : '';
+      return '<section class="workspace-page"><header class="page-title-row"><div><p class="kicker">'+(mode === "daily" ? "2026 DAILY PRACTICE" : "2016—2025 ARCHIVE")+'</p><h1>'+(mode === "daily" ? "每日一题工作台" : "近十年真题库")+'</h1><p>'+(mode === "daily" ? "持续收集至 10 月 18 日。主客观一体题只有在能够独立形成法律论证时才入库。" : "2016—2017 为官方公开题；2018—2025 按公开回忆版管理，事实缺口不补造。")+'</p></div><div class="title-stat"><strong>'+filtered.length+'</strong><span>当前结果</span></div></header>'+audit+ledger+
+        '<div class="workspace-toolbar"><label class="search-box"><span>⌕</span><input id="library-query" value="'+esc(state.query)+'" placeholder="搜索案情、争点、老师、规则……" aria-label="搜索题库"></label><label><span>科目</span><select id="subject-filter"><option>全部科目</option>'+subjects.map((item) => '<option '+(item === state.subject ? "selected" : "")+'>'+esc(item)+'</option>').join("")+'</select></label>'+(mode === "daily" ? '<label><span>老师</span><select id="teacher-filter"><option>全部老师</option>'+teachers.map((item) => '<option '+(item === state.teacher ? "selected" : "")+'>'+esc(item)+'</option>').join("")+'</select></label>' : '')+(mode === "history" ? '<label><span>年份</span><select id="year-filter"><option>全部年份</option>'+years.map((item) => '<option '+(item === state.year ? "selected" : "")+'>'+esc(item)+'</option>').join("")+'</select></label>' : '')+'</div>'+
         '<div class="study-workspace"><aside class="workspace-rail"><div class="rail-block"><span>资料类型</span><strong>'+(mode === "daily" ? "2026 持续更新" : "近十年归档")+'</strong><p>'+(mode === "daily" ? "纯主观题优先；主客观一体内容明确标注。" : "回忆版使用条件式结论处理事实缺口。")+'</p></div><div class="rail-block"><span>完整性标准</span><ul><li>题面范围明确</li><li>设问可以独立作答</li><li>答案有规则与涵摄</li><li>原文与核验状态可追溯</li></ul></div><button id="reset-library">清空全部筛选</button></aside><div class="record-index" aria-label="题目列表"><div class="index-head"><strong>'+(mode === "daily" ? "训练目录" : "真题目录")+'</strong><span>'+filtered.length+' 条</span></div>'+(filtered.length ? filtered.map((item,index) => '<button data-record="'+esc(item.id)+'" class="'+(selected?.id === item.id ? "active" : "")+'"><span class="index-number">'+String(index+1).padStart(2,"0")+'</span><span class="index-copy"><small>'+esc(item.subject)+' · '+(mode === "history" ? item.year : dateLabel(item.date))+'</small><strong>'+esc(item.title)+'</strong><em>'+esc(item.topic)+'</em><i>'+esc(sourceKind(item))+'</i></span></button>').join("") : '<div class="empty"><strong>没有匹配条目</strong><p>请更换关键词或清空筛选。</p></div>')+'</div>'+(selected ? recordReader(selected) : '')+'</div></section>';
     }
 
@@ -154,18 +163,18 @@ const html = `<!doctype html>
     }
 
     function render(focusId) {
-      document.getElementById("app").innerHTML = header()+'<div class="site-frame">'+body()+'</div><footer><div><span class="brand-seal">法</span><p><strong>法考主观题资料库</strong><small>持续更新至 2026 年 10 月 18 日</small></p></div><p>公开学习整理 · 原题与公布答案请从来源页核对 · 核验截止 2026-08-31</p></footer><nav class="mobile-nav" aria-label="移动端主导航">'+navItems.map((item) => '<button data-view="'+item[0]+'" class="'+(state.view === item[0] ? "active" : "")+'"><span>'+item[3]+'</span>'+item[2]+'</button>').join("")+'</nav>';
+      document.getElementById("app").innerHTML = header()+'<div class="site-frame">'+body()+'</div><footer><div><span class="brand-seal">法</span><p><strong>法考主观题资料库</strong><small>持续更新至 2026 年 10 月 18 日</small></p></div><p>公开学习整理 · 原题与公布答案请从来源页核对 · 核验截止 2026-08-31</p></footer><nav class="mobile-nav" aria-label="移动端主导航">'+mobileNavItems.map((item) => '<button data-view="'+item[0]+'" class="'+(state.view === item[0] ? "active" : "")+'"><span>'+item[3]+'</span>'+(item[0] === "daily" ? "题库" : item[2])+'</button>').join("")+'</nav>';
       if (focusId) { const input = document.getElementById(focusId); if (input) { input.focus(); input.setSelectionRange(input.value.length,input.value.length); } }
     }
 
     document.addEventListener("click", (event) => {
       const view = event.target.closest("[data-view]");
-      if (view) { event.preventDefault(); state.view = view.dataset.view; state.query = ""; state.subject = "全部科目"; state.year = "全部年份"; render(); window.scrollTo({top:0,behavior:"smooth"}); return; }
+      if (view) { event.preventDefault(); state.view = view.dataset.view; state.query = ""; state.subject = "全部科目"; state.teacher = "全部老师"; state.year = "全部年份"; render(); window.scrollTo({top:0,behavior:"smooth"}); return; }
       const record = event.target.closest("[data-record]");
       if (record) { state[state.view === "daily" ? "selectedDaily" : "selectedHistory"] = record.dataset.record; render(); document.getElementById("record-reader")?.scrollIntoView({behavior:"smooth",block:"start"}); return; }
       const recitation = event.target.closest("[data-recitation]");
       if (recitation) { state.selectedRecitation = recitation.dataset.recitation; state.concealed = false; render(); document.getElementById("recitation-reader")?.scrollIntoView({behavior:"smooth",block:"start"}); return; }
-      if (event.target.closest("#reset-library")) { state.query = ""; state.subject = "全部科目"; state.year = "全部年份"; render(); return; }
+      if (event.target.closest("#reset-library")) { state.query = ""; state.subject = "全部科目"; state.teacher = "全部老师"; state.year = "全部年份"; render(); return; }
       if (event.target.closest("#toggle-memory")) { state.concealed = !state.concealed; render(); return; }
       if (event.target.closest("#toggle-completion")) { const id = state.selectedRecitation; state.completed = state.completed.includes(id) ? state.completed.filter((item) => item !== id) : [...state.completed,id]; localStorage.setItem("fakao-recitation-progress", JSON.stringify(state.completed)); render(); }
     });
@@ -176,6 +185,7 @@ const html = `<!doctype html>
     });
     document.addEventListener("change", (event) => {
       if (event.target.id === "subject-filter") { state.subject = event.target.value; render(); }
+      if (event.target.id === "teacher-filter") { state.teacher = event.target.value; render(); }
       if (event.target.id === "year-filter") { state.year = event.target.value; render(); }
     });
     render();
