@@ -17,6 +17,7 @@
 
 - `output/site/法考主观题资料库.html`：双击可离线使用的单文件网页
 - `output/pdf/法考主观题十年与2026每日一题阅读册.pdf`：37 页 A4 打印版
+- `output/pdf/法考主观题私人自学册-完整重构题面与原创答案.pdf`：83 页私人自学版，含 78 组重构题面、完整原创作答及逐题原题/公布答案入口
 - `outputs/01a053f4-c3bb-7790-a432-e754bb16040b/法考主观题资料库.xlsx`：5 个工作表的原始资料库
 - `output/收集与使用说明.md`：来源、口径和限制说明
 
@@ -38,6 +39,7 @@ npm run build
 node scripts/build-offline.mjs
 node scripts/build-workbook.mjs
 python3 scripts/build-pdf.py
+python3 scripts/build-study-pdf.py
 ```
 
 原题与原答案版权归各自来源方，本项目仅用于个人学习整理。
