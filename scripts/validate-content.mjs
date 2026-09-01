@@ -33,7 +33,7 @@ const liDaily = library.dailyQuestions.filter((item) => item.id.startsWith("2026
 const mengDaily = library.dailyQuestions.filter((item) => item.id.startsWith("2026-meng"));
 const hanDaily = library.dailyQuestions.filter((item) => item.id.startsWith("2026-han"));
 const pureDaily = [...liDaily, ...mengDaily];
-if (liDaily.length !== 13) errors.push(`李佳纯主观每日一题应为 13 题，当前 ${liDaily.length} 题`);
+if (liDaily.length !== 14) errors.push(`李佳纯主观每日一题应为 14 题，当前 ${liDaily.length} 题`);
 if (mengDaily.length !== 9) errors.push(`孟献贵案例带写当前应接入 9 题，当前 ${mengDaily.length} 题`);
 if (hanDaily.length !== 7) errors.push(`韩心怡主客一体主观题当前应接入 7 题，当前 ${hanDaily.length} 题`);
 for (const item of library.dailyQuestions) {
@@ -47,8 +47,8 @@ for (const item of library.dailyQuestions) {
 }
 const pureQuestionLinks = liDaily.filter((item) => item.sourceUrl.includes("/news/detail/")).length;
 const pureAnswerLinks = liDaily.filter((item) => item.answerUrl?.includes("/news/detail/")).length;
-if (pureQuestionLinks !== 13) errors.push(`李佳题目单篇链接应为 13/13，当前 ${pureQuestionLinks}/13`);
-if (pureAnswerLinks !== 12) errors.push(`李佳答案单篇链接当前口径应为 12/13，当前 ${pureAnswerLinks}/13`);
+if (pureQuestionLinks !== 13) errors.push(`李佳题目单篇链接应为 13/14，当前 ${pureQuestionLinks}/14`);
+if (pureAnswerLinks !== 12) errors.push(`李佳答案单篇链接当前口径应为 12/14，当前 ${pureAnswerLinks}/14`);
 
 requireUnique(channels.channels, "id", "渠道 ID");
 if (channels.channels.length < 18) errors.push(`渠道数量不应少于 18，当前 ${channels.channels.length}`);
@@ -71,7 +71,7 @@ for (const item of recitations.records) {
 }
 
 const records = buildRecords(library);
-if (records.length !== 86) errors.push(`结构化题目总数应为 86，当前 ${records.length}`);
+if (records.length !== 87) errors.push(`结构化题目总数应为 87，当前 ${records.length}`);
 for (const record of records) {
   requireValue(record.completeQuestion, `${record.id}.completeQuestion`);
   requireValue(record.trainingQuestions, `${record.id}.trainingQuestions`);

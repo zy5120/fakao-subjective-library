@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "lastReviewed": "2026-08-31",
+  "lastReviewed": "2026-09-01",
   "channels": [
     {
       "id": "moj-exam-center",
@@ -16,7 +16,7 @@
       "priority": "P0",
       "status": "已接入",
       "contentType": "官方考试信息",
-      "lastChecked": "2026-08-31",
+      "lastChecked": "2026-09-01",
       "nextCheck": "2026-09-19",
       "notes": "考试日期、报名、准考证和成绩信息只采用司法行政机关公告。"
     },
@@ -34,7 +34,7 @@
       "priority": "P0",
       "status": "已接入",
       "contentType": "权威理论带背",
-      "lastChecked": "2026-08-31",
+      "lastChecked": "2026-09-01",
       "nextCheck": "2026-09-07",
       "notes": "2026 备考以《习近平法治思想学习纲要（2025年版）》的十二个坚持为准。"
     },
@@ -54,8 +54,8 @@
       "contentType": "主观带背",
       "publishedCount": 83,
       "indexedCount": 15,
-      "lastChecked": "2026-08-31",
-      "nextCheck": "2026-09-01",
+      "lastChecked": "2026-09-01",
+      "nextCheck": "2026-09-02",
       "notes": "教师公开带背与权威理论资料交叉核验；网页正文使用本库原创背诵稿。"
     },
     {
@@ -63,7 +63,7 @@
       "institution": "方圆众合",
       "teacher": "李佳",
       "platform": "微博 / 新浪公开镜像",
-      "series": "2026 行政法主观题每日一题（已核第 1—13 题）",
+      "series": "2026 行政法主观题每日一题（已核第 1—14 题）",
       "subjects": ["行政法", "行政诉讼法"],
       "contentKinds": ["纯主观每日一题", "完整题面", "公布答案与解析"],
       "primaryUrl": "https://www.sina.cn/media/1552849431",
@@ -72,11 +72,11 @@
       "priority": "P0",
       "status": "已接入",
       "contentType": "纯主观",
-      "publishedCount": 13,
-      "indexedCount": 13,
-      "lastChecked": "2026-08-31",
+      "publishedCount": 14,
+      "indexedCount": 14,
+      "lastChecked": "2026-09-01",
       "nextCheck": "2026-09-02",
-      "notes": "本渠道登记的是 8 月 18 日启动的独立主观题系列；此前 1—108 为客观题系列，另列为主客观一体观察源，不与这 13 道纯主观题混算。"
+      "notes": "本渠道登记的是 8 月 18 日启动的独立主观题系列；此前 1—108 为客观题系列，另列为主客观一体观察源，不与这 14 道纯主观题混算。第 14 题题目与答案已由公开账号索引核验，单篇镜像链接仍待稳定。"
     },
     {
       "id": "mengxiagui-weibo",
@@ -94,7 +94,7 @@
       "contentType": "纯主观",
       "publishedCount": 238,
       "indexedCount": 9,
-      "lastChecked": "2026-08-31",
+      "lastChecked": "2026-09-01",
       "nextCheck": "2026-09-02",
       "notes": "该栏目为独立的主观题案例带写系列，不再归入客观题主观化；现已结构化接入第 225—232、238 题，其余按题面与答案完整性分批回填。"
     },
@@ -114,7 +114,7 @@
       "contentType": "客观题主观化",
       "publishedCount": 98,
       "indexedCount": 0,
-      "lastChecked": "2026-08-31",
+      "lastChecked": "2026-09-01",
       "nextCheck": "2026-09-03",
       "notes": "客观题不直接入库；主观简答、证据分析和程序论证优先。"
     },
@@ -134,7 +134,7 @@
       "contentType": "客观题主观化",
       "publishedCount": 154,
       "indexedCount": 0,
-      "lastChecked": "2026-08-31",
+      "lastChecked": "2026-09-01",
       "nextCheck": "2026-09-03",
       "notes": "优先收录因果关系、认识错误、共同犯罪和观点展示类主观分析。"
     },
@@ -154,7 +154,7 @@
       "contentType": "客观题主观化",
       "publishedCount": 52,
       "indexedCount": 0,
-      "lastChecked": "2026-08-31",
+      "lastChecked": "2026-09-01",
       "nextCheck": "2026-09-04",
       "notes": "仅收录能够形成规则说明、冲突规范适用或法律关系分析的题目。"
     },
@@ -174,7 +174,7 @@
       "contentType": "主客一体",
       "publishedCount": 71,
       "indexedCount": 7,
-      "lastChecked": "2026-08-31",
+      "lastChecked": "2026-09-01",
       "nextCheck": "2026-09-02",
       "notes": "官方账号明确说明主客一体课程在可考主观题章节设置主观案例；现已接入 Day 64—70 的完整题面、公布答案要旨和本库完整作答，其他题继续按主观属性逐条筛入。"
     },
@@ -194,7 +194,7 @@
       "contentType": "客观题主观化",
       "publishedCount": 148,
       "indexedCount": 0,
-      "lastChecked": "2026-08-31",
+      "lastChecked": "2026-09-01",
       "nextCheck": "2026-09-03",
       "notes": "每日小判断不冒充纯主观题；精选小案例和主观十题取得稳定题目、答案页后进入主观目录。"
     },
@@ -214,7 +214,7 @@
       "contentType": "客观题主观化",
       "publishedCount": 0,
       "indexedCount": 0,
-      "lastChecked": "2026-08-31",
+      "lastChecked": "2026-09-01",
       "nextCheck": "2026-09-04",
       "notes": "检索到题目、答案与解析汇总入口；待逐题确认是否具有完整可独立作答的主观设问。"
     },
@@ -234,7 +234,7 @@
       "contentType": "客观题主观化",
       "publishedCount": 89,
       "indexedCount": 0,
-      "lastChecked": "2026-08-31",
+      "lastChecked": "2026-09-01",
       "nextCheck": "2026-09-04",
       "notes": "客观题不直接进入主观目录；公司法和商法中可形成完整案例分析的题目另行标记。"
     },
@@ -254,7 +254,7 @@
       "contentType": "主观专题",
       "publishedCount": 0,
       "indexedCount": 0,
-      "lastChecked": "2026-08-31",
+      "lastChecked": "2026-09-01",
       "nextCheck": "2026-09-03",
       "notes": "属于主观题公开课程而非每日一题；保留为刑诉主观题扩展渠道，不计入每日一题数量。"
     },
@@ -274,7 +274,7 @@
       "contentType": "主观专题",
       "publishedCount": 29,
       "indexedCount": 0,
-      "lastChecked": "2026-08-31",
+      "lastChecked": "2026-09-01",
       "nextCheck": "2026-09-05",
       "notes": "公开课明确为 2026 主观题课程，但不是每日一题；作为后续补充案例与答题规则的来源。"
     },
@@ -292,7 +292,7 @@
       "priority": "P2",
       "status": "渠道预留",
       "contentType": "渠道观察",
-      "lastChecked": "2026-08-31",
+      "lastChecked": "2026-09-01",
       "nextCheck": "2026-09-05",
       "notes": "发现无需登录、题面答案可逐题核验的内容后接入。"
     },
@@ -310,7 +310,7 @@
       "priority": "P2",
       "status": "渠道预留",
       "contentType": "渠道观察",
-      "lastChecked": "2026-08-31",
+      "lastChecked": "2026-09-01",
       "nextCheck": "2026-09-05",
       "notes": "不绕过付费、登录或 App 访问限制。"
     },
@@ -328,7 +328,7 @@
       "priority": "P2",
       "status": "渠道预留",
       "contentType": "渠道观察",
-      "lastChecked": "2026-08-31",
+      "lastChecked": "2026-09-01",
       "nextCheck": "2026-09-06",
       "notes": "只接入公开、可核验、具有稳定原文入口的内容。"
     },
@@ -346,7 +346,7 @@
       "priority": "P3",
       "status": "渠道预留",
       "contentType": "渠道观察",
-      "lastChecked": "2026-08-31",
+      "lastChecked": "2026-09-01",
       "nextCheck": "2026-09-10",
       "notes": "预留机构级入口；找到高质量逐题公开资料后拆分为独立渠道。"
     }
