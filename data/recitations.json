@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "title": "2026 习近平法治思想主观题带背",
   "basis": "以《习近平法治思想学习纲要（2025年版）》和 2026 年中央、国家机关公开资料为权威底稿，教师公开带背用于发现高频设问。",
-  "lastReviewed": "2026-09-04",
+  "lastReviewed": "2026-09-05",
   "records": [
     {
       "id": "rule-of-law-00",
@@ -142,8 +142,8 @@
       "order": 7,
       "date": "2026-08-31",
       "series": "十二个坚持",
-      "channelId": "official-rule-of-law-thought",
-      "sourceType": "权威纲要",
+      "channelId": "huzhen-weibo",
+      "sourceType": "教师高频设问+权威复核",
       "topic": "共同推进与一体建设",
       "importance": "必背",
       "question": "如何理解依法治国、依法执政、依法行政共同推进和法治国家、法治政府、法治社会一体建设？",
@@ -151,10 +151,10 @@
       "memorization": "依法治国、依法执政、依法行政是有机整体，关键在于党依法执政、各级政府依法行政。法治国家、法治政府、法治社会相辅相成，法治国家是目标，法治政府是重点任务和主体工程，法治社会是基础。推进全面依法治国，必须统筹兼顾、把握重点、整体谋划，在共同推进上着力，在一体建设上用劲，形成职责明确、依法行政的政府治理体系和共建共治共享的社会治理格局。",
       "skeleton": ["共同推进", "党依法执政", "政府依法行政", "法治国家目标", "法治政府重点", "法治社会基础", "统筹一体"],
       "selfCheck": ["三个“依法”中关键是什么？", "国家、政府、社会各自定位是什么？", "共同推进和一体建设有何区别？"],
-      "sourceUrl": "https://www.12371.cn/2025/02/06/ARTI1738807387913394.shtml",
+      "sourceUrl": "https://www.sina.cn/news/detail/5339675213693161.html",
       "authorityUrl": "https://www.moj.gov.cn/pub/sfbgw/zwgkztzl/xxxcgcxjpfzsx/fzsxpljj/202511/t20251125_528487.html",
-      "verifiedAt": "2026-08-31",
-      "status": "权威来源已核验"
+      "verifiedAt": "2026-09-05",
+      "status": "教师设问与权威表述已交叉核验"
     },
     {
       "id": "rule-of-law-08",

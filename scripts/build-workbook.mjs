@@ -91,7 +91,7 @@ summary.getRange("D5:H7").values = [[data.metadata.notice]];
 summary.getRange("D5:H7").format = { wrapText: true, verticalAlignment: "top", font: { color: colors.muted, size: 10 }, borders: { preset: "outside", style: "thin", color: colors.line } };
 summary.getRange("A10:D10").values = [["资料层", "时间/范围", "题面性质", "建议用法"]];
 summary.getRange("A11:D13").values = [
-  ["2026 每日一题", "2026-01-01 至 2026-09-04", "教师/机构公开主观训练", "按科目与争点筛选，先答后看框架"],
+  ["2026 每日一题", "2026-01-01 至 2026-09-05", "教师/机构公开主观训练", "按科目与争点筛选，先答后看框架"],
   ["2016—2017", "国家司法考试试卷四", "官方公开", "摘要导航后回原页核对完整题面"],
   ["2018—2025", "国家统一法律职业资格考试", "公开回忆版", "对卷别和争点保留条件式表述"],
 ];

@@ -63,7 +63,7 @@ const navItems: { id: View; label: string; short: string }[] = [
 const mobileNavItems = navItems.filter((item) => ["overview", "daily", "recitation", "history"].includes(item.id));
 
 const dailySeries = [
-  { teacher: "李佳", subject: "行政法", series: "主观题每日一题", indexed: 18, published: "18", note: "题面与答案 18/18 单篇定位" },
+  { teacher: "李佳", subject: "行政法", series: "主观题每日一题", indexed: 19, published: "19", note: "题面与答案 19/19 单篇定位" },
   { teacher: "孟献贵", subject: "民法", series: "主观题案例带写", indexed: 12, published: "250", note: "已接入第 225—232、238、248—250 题" },
   { teacher: "韩心怡", subject: "民诉", series: "每日一问·主客一体", indexed: 7, published: "71+", note: "已接入 Day 64—70；系列已收官" },
 ];
@@ -249,7 +249,7 @@ function LibraryWorkspace({ mode }: { mode: "daily" | "history" }) {
         <div><span>已接入老师</span><strong>{dailySeries.length}</strong><small>行政法、民法、民诉</small></div>
         <div><span>纯主观训练</span><strong>{pureDailyRecords.length}</strong><small>李佳每日一题 + 孟献贵案例带写</small></div>
         <div><span>主客一体主观题</span><strong>{hybridDailyRecords.length}</strong><small>韩心怡 Day 64—70</small></div>
-        <p>截至 2026-09-04，已核到李佳、孟献贵、韩心怡三个连续栏目。柏浪涛、左宁、郄鹏恩等同名“每日一题”当前以客观选择题为主，只登记在渠道中心，不计入主观题数量。</p>
+        <p>截至 2026-09-05，已核到李佳、孟献贵、韩心怡三个连续栏目。柏浪涛、左宁、郄鹏恩等同名“每日一题”当前以客观选择题为主，只登记在渠道中心，不计入主观题数量。</p>
       </div>}
       {mode === "daily" && <section className="series-ledger" aria-label="教师系列接入台账">
         {dailySeries.map((series) => <article key={series.teacher}>
@@ -402,7 +402,7 @@ export default function Home() {
         {view === "channels" && <ChannelsView />}
         {view === "standard" && <StandardView />}
       </div>
-      <footer><div><span className="brand-seal">法</span><p><strong>法考主观题资料库</strong><small>持续更新至 2026 年 10 月 18 日</small></p></div><p>公开学习整理 · 原题与公布答案请从来源页核对 · 核验截止 2026-09-04</p></footer>
+      <footer><div><span className="brand-seal">法</span><p><strong>法考主观题资料库</strong><small>持续更新至 2026 年 10 月 18 日</small></p></div><p>公开学习整理 · 原题与公布答案请从来源页核对 · 核验截止 2026-09-05</p></footer>
       <nav className="mobile-nav" aria-label="移动端主导航">{mobileNavItems.map((item) => <button key={item.id} className={view === item.id ? "active" : ""} onClick={() => setView(item.id)}><span>{item.id === "overview" ? "⌂" : item.id === "daily" ? "题" : item.id === "recitation" ? "背" : "卷"}</span>{item.id === "daily" ? "题库" : item.short}</button>)}</nav>
     </main>
   );
